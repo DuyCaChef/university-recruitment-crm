@@ -38,6 +38,7 @@
 7. [Quy chuẩn Phát triển & Đóng góp Mã nguồn (Git Flow)](#7-quy-chuẩn-phát-triển--đóng-góp-mã-nguồn-git-flow)
 8. [Bảo mật & Quản lý Biến môi trường](#8-bảo-mật--quản-lý-biến-môi-trường)
 9. [Tài liệu Nghiệp vụ & Kỹ thuật Liên quan](#9-tài-liệu-nghiệp-vụ--kỹ-thuật-liên-quan)
+10. [Hướng dẫn Cài đặt & Khởi chạy Toàn diện (Development Setup)](#10-hướng-dẫn-cài-đặt--khởi-chạy-môi-trường-phát-triển-development-setup)
 
 ---
 
@@ -480,7 +481,148 @@ Dự án đi kèm bộ hồ sơ kỹ thuật và nghiệp vụ hoàn chỉnh đ�
 
 ---
 
+## 10. Hướng dẫn Cài đặt & Khởi chạy Môi trường Phát triển (Development Setup)
+
+### 10.1. Yêu cầu Tiền điều kiện (Prerequisites)
+Đảm bảo máy trạm phát triển đã cài đặt các công cụ sau:
+* **Node.js**: Phiên bản `>= 18.x` hoặc `>= 20.x` (LTS khuyến nghị)
+* **npm**: Phiên bản `>= 9.x`
+* **Docker Desktop**: Hỗ trợ Docker Compose v2 (đang chạy nền)
+* **Git**: Quản lý phiên bản mã nguồn
+
+---
+
+### 10.2. Khởi chạy Dịch vụ Hạ tầng (Database & Object Storage)
+Dự án sử dụng Docker Compose để quản lý cơ sở dữ liệu quan hệ PostgreSQL 16 và hệ thống lưu trữ tệp MinIO S3-compatible.
+
+1. Di chuyển vào thư mục hạ tầng:
+   ```bash
+   cd infrastructure
+   ```
+
+2. Khởi động các container ngầm:
+   ```bash
+   docker compose up -d
+   ```
+
+3. Kiểm tra trạng thái dịch vụ:
+   ```bash
+   docker compose ps
+   ```
+
+* **Cổng kết nối PostgreSQL**: `localhost:5432` (Database: `university_crm`)
+* **MinIO S3 API Endpoint**: `http://localhost:9000`
+* **MinIO Web Console**: `http://localhost:9001` (Tài khoản mặc định: `minioadmin` / `minioadmin`)
+
+> [!TIP]
+> **Lưu ý cấu hình MinIO Bucket:** Truy cập vào `http://localhost:9001`, đăng nhập và tạo bucket có tên là `agu-crm-storage` (nếu chưa có) để sẵn sàng nhận dữ liệu tệp CV và hình ảnh.
+
+---
+
+### 10.3. Thiết lập & Chạy Backend (NestJS Modular Monolith)
+
+1. Mở cửa sổ dòng lệnh và di chuyển vào thư mục backend:
+   ```bash
+   cd ../backend
+   ```
+
+2. Tạo file biến môi trường cục bộ từ mẫu:
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Cấu hình mẫu tối thiểu trong `backend/.env`:
+   ```env
+   NODE_ENV=development
+   PORT=3000
+
+   # Database (PostgreSQL 16)
+   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/university_crm?schema=public"
+
+   # MinIO Object Storage
+   MINIO_ENDPOINT=localhost
+   MINIO_PORT=9000
+   MINIO_USE_SSL=false
+   MINIO_ACCESS_KEY=minioadmin
+   MINIO_SECRET_KEY=minioadmin
+   MINIO_BUCKET=agu-crm-storage
+
+   # JWT Secrets
+   JWT_SECRET=super_secret_jwt_key_agu_crm_2026
+   JWT_EXPIRES_IN=15m
+   JWT_REFRESH_SECRET=super_secret_refresh_key_agu_crm_2026
+   JWT_REFRESH_EXPIRES_IN=7d
+   ```
+
+4. Cài đặt các gói phụ thuộc (Dependencies):
+   ```bash
+   npm install
+   ```
+
+5. Đồng bộ Schema Cơ sở Dữ liệu qua Prisma ORM:
+   ```bash
+   # Sinh Prisma Client
+   npx prisma generate
+
+   # Thực thi migration tạo cấu trúc bảng CSDL
+   npx prisma migrate dev --name init_database
+   ```
+
+6. Khởi chạy ứng dụng Backend ở chế độ phát triển:
+   ```bash
+   npm run start:dev
+   ```
+
+* **Backend REST API**: `http://localhost:3000/api/v1`
+* **Tài liệu tương tác Swagger OpenAPI**: `http://localhost:3000/api/docs`
+
+---
+
+### 10.4. Thiết lập & Chạy Frontend (React + Vite + Tailwind CSS)
+
+1. Mở một cửa sổ dòng lệnh mới và di chuyển vào thư mục frontend:
+   ```bash
+   cd frontend
+   ```
+
+2. Tạo file biến môi trường cho Frontend:
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Cấu hình trong `frontend/.env`:
+   ```env
+   VITE_API_BASE_URL=http://localhost:3000/api/v1
+   ```
+
+4. Cài đặt các gói phụ thuộc:
+   ```bash
+   npm install
+   ```
+
+5. Khởi chạy Frontend Development Server:
+   ```bash
+   npm run dev
+   ```
+
+* **Ứng dụng Client sẽ chạy tại**: `http://localhost:5173`
+
+---
+
+### 10.5. Kiểm tra & Vận hành Thử nghiệm (Verification Checklist)
+
+| Dịch vụ | Địa chỉ truy cập | Tài khoản / Dữ liệu kiểm tra |
+| :--- | :--- | :--- |
+| **Frontend SPA** | `http://localhost:5173` | Giao diện hệ thống React Vite + Tailwind |
+| **Backend REST API** | `http://localhost:3000/api/v1` | Health check: `GET /health` trả về `{ status: 'ok' }` |
+| **Swagger Docs** | `http://localhost:3000/api/docs` | Danh sách schema và endpoint 15 module |
+| **MinIO Console** | `http://localhost:9001` | `minioadmin` / `minioadmin` (Bucket: `agu-crm-storage`) |
+| **PostgreSQL 16** | `localhost:5432` | `postgres` / `postgres` (Database: `university_crm`) |
+
+---
+
 <p align="center">
   <strong>KHOÁ LUẬN TỐT NGHIỆP ĐẠI HỌC — TRƯỜNG ĐẠI HỌC AN GIANG (ĐHQG-HCM)</strong><br>
   <em>Bản quyền tài liệu và mã nguồn thuộc về Nhóm Nghiên cứu & Trung tâm Hướng nghiệp & Hỗ trợ Sinh viên AGU © 2026.</em>
 </p>
+
