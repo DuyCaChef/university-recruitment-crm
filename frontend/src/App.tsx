@@ -1,122 +1,91 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { CheckCircle2, Layers, ShieldCheck, Sparkles } from "lucide-react";
 
-function App() {
-  const [count, setCount] = useState(0)
-
+export default function App() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col justify-between font-sans">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 py-4 px-6 sticky top-0 z-10 shadow-sm">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-700 flex items-center justify-center text-white font-bold text-xl shadow">
+              AGU
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-slate-900 leading-tight">
+                AGU Recruitment CRM
+              </h1>
+              <p className="text-xs text-slate-500">
+                Hệ thống Kết nối Sinh viên & Doanh nghiệp
+              </p>
+            </div>
+          </div>
+          <div className="hidden sm:flex items-center space-x-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full text-xs font-semibold border border-emerald-200">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span>Frontend Dev Server Ready</span>
+          </div>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">
+        <div className="bg-gradient-to-r from-blue-700 via-blue-800 to-indigo-900 rounded-2xl p-6 sm:p-10 text-white shadow-lg mb-8">
+          <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium mb-4">
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <span>TASK-S1-09: Khởi tạo Khung React Vite Tailwind</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight mb-3">
+            Frontend Architecture Scaffolding
+          </h2>
+          <p className="text-blue-100 max-w-2xl text-sm sm:text-base leading-relaxed">
+            Khung giao diện React 19, TypeScript, Tailwind CSS và Lucide Icons
+            đã được thiết lập thành công trên cổng 5173.
           </p>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
 
-      <div className="ticks"></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700 mb-4">
+              <Layers className="w-6 h-6" />
+            </div>
+            <h4 className="text-base font-bold text-slate-900 mb-1">
+              Path Alias (@/)
+            </h4>
+            <p className="text-xs text-slate-600">
+              Đã cấu hình đường dẫn tắt trỏ về thư mục src/.
+            </p>
+          </div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div className="w-12 h-12 rounded-lg bg-amber-100 flex items-center justify-center text-amber-700 mb-4">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <h4 className="text-base font-bold text-slate-900 mb-1">
+              Tailwind Responsive
+            </h4>
+            <p className="text-xs text-slate-600">
+              Lưới Grid co giãn mượt mà từ 1 cột (Mobile) sang 3 cột (Desktop).
+            </p>
+          </div>
+
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center text-purple-700 mb-4">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <h4 className="text-base font-bold text-slate-900 mb-1">
+              Lucide Icons
+            </h4>
+            <p className="text-xs text-slate-600">
+              Thư viện vector icon tích hợp trơn tru, hiển thị sắc nét.
+            </p>
+          </div>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      </main>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      {/* Footer */}
+      <footer className="border-t border-slate-200 bg-white py-4 px-6 text-center text-xs text-slate-500">
+        Khóa luận tốt nghiệp: Hệ thống Web CRM Tuyển dụng — Trường Đại học An
+        Giang
+      </footer>
+    </div>
+  );
 }
-
-export default App
