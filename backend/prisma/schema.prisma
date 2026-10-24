@@ -1,17 +1,115 @@
-generator client {
+// ===================================================================
+// CẤU HÌNH GENERATOR VÀ DATASOURCE
+// ===================================================================
+generator client{
   provider = "prisma-client-js"
 }
 
-datasource db {
+datasource db{
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url = env("DATABASE_URL")
 }
 
-// Model ban đầu phục vụ chạy migration nghiệm thu TASK-S1-06
-model HealthCheckLog {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  status    String   @default("UP") @db.VarChar(20)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+// ===================================================================
+// ENUM: ĐỊNH DANH TRẠNG THÁI TÀI KHOẢN
+// ===================================================================
+enum UserStatus{
+  ACTIVE
+  LOCKED
+  INACTIVE
 
-  @@map("health_check_logs")
+  @@map("user_status")
 }
+
+// ===================================================================
+// 1. BẢNG USERS: TÀI KHOẢN XÁC THỰC TRUNG TÂM
+// ===================================================================
+model User {
+  id                 String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email              String     @unique(map: "uq_users_email") @db.VarChar(255)
+  passwordHash       String     @map("password_hash") @db.VarChar(255)
+  status             UserStatus @default(ACTIVE)
+  mustChangePassword Boolean    @default(false) @map("must_change_password")
+  lastLoginAt        DateTime?  @map("last_login_at") @db.Timestamptz(6)
+  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Quan hệ RBAC
+  userRoles          UserRole[] @relation("UserToUserRoles")
+  assignedRoles      UserRole[] @relation("AdminToUserRoles")
+
+  @@map("users")
+}
+
+// ===================================================================
+// 2. BẢNG ROLES: DANH MỤC VAI TRÒ HỆ THỐNG
+// ===================================================================
+model Role {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code            String           @unique(map: "uq_roles_code") @db.VarChar(50)
+  name            String           @db.VarChar(100)
+  description     String?          @db.Text
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Quan hệ RBAC
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+// ===================================================================
+// 3. BẢNG PERMISSIONS: DANH MỤC QUYỀN HẠN NGUYÊN TỬ
+// ===================================================================
+model Permission {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code            String           @unique(map: "uq_permissions_code") @db.VarChar(100)
+  name            String           @db.VarChar(150)
+  module          String           @db.VarChar(50)
+  description     String?          @db.Text
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Quan hệ RBAC
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+// ===================================================================
+// 4. BẢNG USER_ROLES: LIÊN KẾT NGƯỜI DÙNG - VAI TRÒ (COMPOSITE PK)
+// ===================================================================
+model UserRole {
+  userId     String   @map("user_id") @db.Uuid
+  roleId     String   @map("role_id") @db.Uuid
+  assignedAt DateTime @default(now()) @map("assigned_at") @db.Timestamptz(6)
+  assignedBy String?  @map("assigned_by") @db.Uuid
+
+  // Ràng buộc quan hệ và toàn vẹn
+  user       User     @relation("UserToUserRoles", fields: [userId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  assigner   User?    @relation("AdminToUserRoles", fields: [assignedBy], references: [id], onDelete: SetNull)
+
+  // Khóa chính phức hợp (Composite Primary Key)
+  @@id([userId, roleId], map: "pk_user_roles")
+  @@map("user_roles")
+}
+
+// ===================================================================
+// 5. BẢNG ROLE_PERMISSIONS: LIÊN KẾT VAI TRÒ - QUYỀN HẠN (COMPOSITE PK)
+// ===================================================================
+model RolePermission {
+  roleId       String     @map("role_id") @db.Uuid
+  permissionId String     @map("permission_id") @db.Uuid
+  grantedAt    DateTime   @default(now()) @map("granted_at") @db.Timestamptz(6)
+
+  // Ràng buộc quan hệ và toàn vẹn
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  // Khóa chính phức hợp (Composite Primary Key)
+  @@id([roleId, permissionId], map: "pk_role_permissions")
+  @@map("role_permissions")
+}
+
+
