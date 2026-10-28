@@ -15,7 +15,7 @@ export class PasswordService {
     try {
       const salt = await bcrypt.genSalt(this.SALT_ROUNDS);
       return await bcrypt.hash(rawPassword, salt);
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException(
         'Lỗi xảy ra trong quá trình mã hóa mật khẩu.',
       );
@@ -34,7 +34,7 @@ export class PasswordService {
   ): Promise<boolean> {
     try {
       return await bcrypt.compare(rawPassword, hashedPassword);
-    } catch (error) {
+    } catch {
       return false;
     }
   }

@@ -1,3 +1,3 @@
 export const IS_PUBLIC_KEY = 'isPublic';
-export const ROLE_KEY = 'roles';
-export const PERMISSION_KEY = 'permissions';
+export const ROLES_KEY = 'roles';
+export const PERMISSIONS_KEY = 'permissions';

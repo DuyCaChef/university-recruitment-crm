@@ -8,7 +8,11 @@ import {
 import { IsNotEmpty, IsString, IsEmail } from 'class-validator';
 import { PrismaService } from './infrastructure/database/prisma.service';
 import { StorageService } from './infrastructure/storage/storage.service';
+import { Public } from './common/decorators/public.decorator';
 
+@ApiTags('Hệ thống & Kiểm thử (System & Health)')
+@Public() // Mở công khai endpoint Health check và MinIO test
+@Controller('health')
 // DTO mẫu dùng để kiểm thử ValidationPipe toàn cục
 export class SampleValidationDto {
   @ApiProperty({
