@@ -3,10 +3,13 @@ import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
+
+  app.use(cookieParser()); // Sử dụng cookie-parser để đọc cookie từ request
 
   // Thiết lập tiền tố toàn cục (Global Prefix): /api/v1 theo chuẩn kiến trúc
   const apiPrefix = process.env.API_PREFIX || 'api/v1';
