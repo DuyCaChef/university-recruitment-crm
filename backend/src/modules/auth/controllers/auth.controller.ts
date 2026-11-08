@@ -16,6 +16,7 @@ import {
 import type { Response } from 'express';
 import { AuthService } from '../services/auth.service';
 import { LoginDto } from '../dto/login.dto';
+import { ChangePasswordDto } from '../dto/change-password.dto';
 import { Public } from '../../../common/decorators/public.decorator';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { RequirePermissions } from '../../../common/decorators/permissions.decorator';
@@ -54,6 +55,50 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     return this.authService.login(loginDto, res);
+  }
+
+  // Endpoint đăng xuất (Xóa HttpOnly Cookie) - Yêu cầu Token hợp lệ
+  @Post('logout')
+  @ApiBearerAuth('JWT-auth')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Đăng xuất hệ thống (Xóa HttpOnly Cookie)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Đăng xuất thành công.',
+  })
+  async logout(@Res({ passthrough: true }) res: Response) {
+    return this.authService.logout(res);
+  }
+
+  // Endpoint lấy thông tin người dùng hiện tại (Yêu cầu Token hợp lệ)
+  @Get('current-user')
+  @ApiBearerAuth('JWT-auth')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Lấy thông tin tài khoản đang đăng nhập' })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Trả về context thông tin người dùng đang đăng nhập (không bao gồm passwordHash)',
+  })
+  async getCurrentUser(@CurrentUser('id') userId: string) {
+    return this.authService.getCurrentUser(userId);
+  }
+
+  // Endpoint đổi mật khẩu cá nhân (Yêu cầu Token hợp lệ)
+  @Post('change-password')
+  @ApiBearerAuth('JWT-auth')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Đổi mật khẩu cá nhân' })
+  @ApiResponse({ status: 200, description: 'Đổi mật khẩu thành công.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Sai mật khẩu hiện tại hoặc xác nhận không khớp.',
+  })
+  async changePassword(
+    @CurrentUser('id') userId: string,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(userId, dto);
   }
 
   // ===========================================================================
