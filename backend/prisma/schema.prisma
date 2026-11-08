@@ -38,6 +38,10 @@ model User {
   userRoles          UserRole[] @relation("UserToUserRoles")
   assignedRoles      UserRole[] @relation("AdminToUserRoles")
 
+  studentMaster      StudentMaster? // Trỏ từ bảng student_masters
+  studentProfile     Student?       // Trỏ từ bảng students
+  files              File[]         // Trỏ từ bảng files (1 user có thể tải lên nhiều file)
+
   @@map("users")
 }
 
@@ -110,6 +114,157 @@ model RolePermission {
   // Khóa chính phức hợp (Composite Primary Key)
   @@id([roleId, permissionId], map: "pk_role_permissions")
   @@map("role_permissions")
+}
+
+// ===================================================================
+// ENUMS - MODULE 02
+// ===================================================================
+enum StudentStatus{
+  ACTIVE
+  GRADUATED
+  SUSPENDED
+  @@map("student_status")
+}
+
+// ===================================================================
+// MODULE 02: STUDENT MASTER DATA & PROFILE
+// ===================================================================
+
+/// Bảng dữ liệu gốc do Nhà trường nạp (Bất biến bởi sinh viên)
+model StudentMaster {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentCode        String        @unique(map: "uq_student_masters_code") @map("student_code") @db.VarChar(30)
+  fullName           String        @map("full_name") @db.VarChar(150)
+  institutionalEmail String        @unique(map: "uq_student_masters_inst_email") @map("institutional_email") @db.VarChar(255)
+  major              String        @db.VarChar(150)
+  faculty            String?       @db.VarChar(150)
+  academicYear       Int?          @map("academic_year")
+  citizenId          String?       @unique(map: "uq_student_masters_citizen_id") @map("citizen_id") @db.VarChar(20)
+  dateOfBirth        DateTime?     @map("date_of_birth") @db.Date
+  status             StudentStatus @default(ACTIVE)
+  
+  // Khóa ngoại liên kết 1-1 với tài khoản User (được gán khi cấp tài khoản thành công)
+  userId             String?       @unique(map: "uq_student_masters_user") @map("user_id") @db.Uuid
+  user               User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Liên kết 1-1 tới hồ sơ cá nhân
+  studentProfile     Student?
+
+  @@map("student_masters")
+}
+
+/// Bảng hồ sơ năng lực cá nhân (Sinh viên có quyền cập nhật)
+model Student {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentMasterId         String    @unique(map: "uq_students_master") @map("student_master_id") @db.Uuid
+  userId                  String    @unique(map: "uq_students_user") @map("user_id") @db.Uuid
+  
+  phone                   String?   @db.VarChar(30)
+  bio                     String?
+  address                 String?
+  dateOfBirth             DateTime? @map("date_of_birth") @db.Date
+  gender                  String?   @db.VarChar(30)
+  gpa                     Decimal?  @db.Decimal(3,2) // Mở rộng theo yêu cầu khóa luận
+  careerProfileVisibility Boolean   @default(false) @map("career_profile_visibility")
+  
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Ràng buộc toàn vẹn: Không cho phép xóa gốc
+  studentMaster           StudentMaster @relation(fields: [studentMasterId], references: [id], onDelete: Restrict)
+  user                    User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  // Quan hệ 1-N (Kỹ năng, Kinh nghiệm, Dự án, CV)
+  skills                  StudentSkill[]
+  experiences             StudentExperience[]
+  projects                StudentProject[]
+  cvs                     StudentCv[]
+
+  @@map("students")
+}
+
+model StudentSkill {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId   String   @map("student_id") @db.Uuid
+  skillName   String   @map("skill_name") @db.VarChar(100)
+  proficiency String?  @db.VarChar(30)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  // Chống gắn trùng 1 kỹ năng nhiều lần cho cùng 1 sinh viên
+  @@unique([studentId, skillName], map: "uq_student_skills_name")
+  @@map("student_skills")
+}
+
+model StudentExperience {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId   String   @map("student_id") @db.Uuid
+  companyName String   @map("company_name") @db.VarChar(150)
+  position    String   @db.VarChar(150)
+  startDate   DateTime @map("start_date") @db.Date
+  endDate     DateTime? @map("end_date") @db.Date
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  // Tối ưu hiệu năng khi load timeline kinh nghiệm
+  @@index([studentId, startDate(sort: Desc)])
+  @@map("student_experiences")
+}
+
+model StudentProject {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId    String   @map("student_id") @db.Uuid
+  name         String   @db.VarChar(200)
+  description  String?
+  role         String?  @db.VarChar(100)
+  technologies String?
+  projectUrl   String?  @map("project_url") @db.VarChar(500)
+  startDate    DateTime? @map("start_date") @db.Date
+  endDate      DateTime? @map("end_date") @db.Date
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@map("student_projects")
+}
+
+model StudentCv {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId   String   @map("student_id") @db.Uuid
+  fileId      String   @map("file_id") @db.Uuid
+  title       String   @db.VarChar(150)
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  file        File     @relation(fields: [fileId], references: [id], onDelete: Restrict)
+
+  @@index([studentId])
+  @@map("student_cvs")
+}
+
+// Khung File chuẩn bị cho tích hợp MinIO
+model File {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerUserId   String?  @map("owner_user_id") @db.Uuid
+  originalName  String   @map("original_name") @db.VarChar(255)
+  storageKey    String   @unique(map: "uq_files_storage_key") @map("storage_key") @db.VarChar(500)
+  mimeType      String   @map("mime_type") @db.VarChar(100)
+  sizeBytes     BigInt   @map("size_bytes")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  owner         User?    @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
+  studentCvs    StudentCv[]
+
+  @@map("files")
 }
 
 
