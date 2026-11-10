@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ForbiddenException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
@@ -10,6 +11,7 @@ import { PasswordService } from './password.service';
 import { TokenService } from './token.service';
 import { LoginDto } from '../dto/login.dto';
 import { ChangePasswordDto } from '../dto/change-password.dto';
+import { RegisterStudentDto } from '../dto/register-student.dto';
 
 @Injectable()
 export class AuthService {
@@ -219,5 +221,94 @@ export class AuthService {
       statusCode: 200,
       message: 'Đổi mật khẩu thành công. Vui lòng đăng nhập lại.',
     };
+  }
+
+  async registerStudent(dto: RegisterStudentDto) {
+    // 1. Kiểm tra Email có bị trùng trên bảng users chưa
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: dto.email.trim().toLowerCase() },
+    });
+    if (existingUser)
+      throw new ConflictException(
+        'Email này đã được sử dụng. Vui lòng chọn email khác.',
+      );
+
+    // 2. Đối soát dữ liệu Master Data
+    const masterData = await this.prisma.studentMaster.findUnique({
+      where: { studentCode: dto.studentCode },
+    });
+
+    if (!masterData) {
+      throw new BadRequestException(
+        'Mã sinh viên không tồn tại trong hệ thống. Vui lòng kiểm tra lại.',
+      );
+    }
+
+    if (masterData.userId !== null) {
+      throw new BadRequestException(
+        'MSSV này đã được liên kết với một tài khoản. Vui lòng lên hệ với Career Center để được hỗ trợ.',
+      );
+    }
+
+    // 3. Băm mật khẩu trước khi lưu vào CSDL
+    const hashedPassword = await this.passwordService.hashPassword(
+      dto.password,
+    );
+
+    // 4. Mở DB Transaction để đảm bảo tính toàn vẹn
+    return this.prisma.$transaction(async (tx) => {
+      // 4.1. Tạo tài khoản người dùng mới
+      const newUser = await tx.user.create({
+        data: {
+          email: dto.email.toLowerCase().trim(),
+          passwordHash: hashedPassword,
+          status: 'ACTIVE',
+        },
+      });
+
+      // 4.2 Lấy Role 'STUDENT' và gán cho User
+      const studentRole = await tx.role.findUniqueOrThrow({
+        where: { code: 'STUDENT' },
+      });
+      await tx.userRole.create({
+        data: {
+          userId: newUser.id,
+          roleId: studentRole.id,
+        },
+      });
+
+      // 4.3 Tạo hồ sơ Student Profile liên kết với Master Data
+      await tx.student.create({
+        data: {
+          studentMasterId: masterData.id,
+          userId: newUser.id,
+        },
+      });
+
+      // 4.4 Cập nhật liên kết ở student_masters (Chống Race Condition)
+      const updateMaster = await tx.studentMaster.updateMany({
+        where: {
+          id: masterData.id,
+          userId: null,
+        },
+        data: { userId: newUser.id },
+      });
+
+      if (updateMaster.count === 0) {
+        throw new ConflictException(
+          'Hồ sơ này vừa được kích hoạt bởi một giao dịch khác. Vui lòng kiểm tra lại.',
+        );
+      }
+
+      return {
+        statusCode: 201,
+        message:
+          'Đăng ký tài khoản sinh viên thành công. Vui lòng đăng nhập để tiếp tục.',
+        data: {
+          userId: newUser.id,
+          studentCode: masterData.studentCode,
+        },
+      };
+    });
   }
 }

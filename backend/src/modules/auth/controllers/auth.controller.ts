@@ -21,6 +21,7 @@ import { Public } from '../../../common/decorators/public.decorator';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { RequirePermissions } from '../../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
+import { RegisterStudentDto } from '../dto/register-student.dto';
 
 @ApiTags('Authentication (Xác thực & Phiên làm việc)')
 @Controller('auth')
@@ -99,6 +100,14 @@ export class AuthController {
     @Body() dto: ChangePasswordDto,
   ) {
     return this.authService.changePassword(userId, dto);
+  }
+
+  // Endpoint đăng ký tài khoản sinh viên (PUBLIC - KHÔNG YÊU CẦU TOKEN)
+  @Public()
+  @Post('register-student')
+  @HttpCode(HttpStatus.CREATED) // Trả về 201 Created theo chuẩn RESTful
+  async registerStudent(@Body() dto: RegisterStudentDto) {
+    return this.authService.registerStudent(dto);
   }
 
   // ===========================================================================
