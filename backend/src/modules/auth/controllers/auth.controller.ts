@@ -4,8 +4,10 @@ import {
   Get,
   Body,
   Res,
+  Req,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -13,6 +15,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import type { Response } from 'express';
 import { AuthService } from '../services/auth.service';
 import { LoginDto } from '../dto/login.dto';
@@ -108,6 +111,29 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED) // Trả về 201 Created theo chuẩn RESTful
   async registerStudent(@Body() dto: RegisterStudentDto) {
     return this.authService.registerStudent(dto);
+  }
+
+  // ==========================================
+  // GOOGLE SSO ENDPOINTS
+  // ==========================================
+  @Public()
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth() {
+    // Passport tự động chuyển hướng trình duyệt sang màn hình đăng nhập Google
+  }
+
+  @Public()
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthCallback(@Req() req: any, @Res() res: Response) {
+    const result = await this.authService.handleGoogleAuth(req.user);
+
+    // Chuyển hướng về Frontend kèm Access Token
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    return res.redirect(
+      `${clientUrl}/auth/callback?token=${result.accessToken}`,
+    );
   }
 
   // ===========================================================================

@@ -5,6 +5,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { Response } from 'express';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { PasswordService } from './password.service';
@@ -310,5 +311,145 @@ export class AuthService {
         },
       };
     });
+  }
+
+  /**
+   * Xử lý đăng nhập thông qua Google OAuth 2.0 (SSO AGU Student)
+   * 1. Đối soát email trường với danh mục gốc student_masters
+   * 2. Tra cứu tài khoản users kèm quan hệ roles và permissions
+   */
+  async handleGoogleAuth(googleUser: { email: string; fullName: string }) {
+    // 1. Đối soát email trường với danh mục gốc student_masters
+    const masterData = await this.prisma.studentMaster.findUnique({
+      where: { institutionalEmail: googleUser.email },
+    });
+
+    if (!masterData) {
+      throw new UnauthorizedException(
+        'Email sinh viên này không tồn tại trong danh sách dữ liệu nhà trường.',
+      );
+    }
+
+    // 2. Tra cứu tài khoản users kèm quan hệ roles và permissions
+    let user = await this.prisma.user.findUnique({
+      where: { email: googleUser.email },
+      include: {
+        userRoles: {
+          include: {
+            role: {
+              include: {
+                rolePermissions: {
+                  include: { permission: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // 3. Nếu sinh viên đăng nhập lần đầu -> Tạo tài khoản trong DB Transaction
+    if (!user) {
+      // Sinh mật khẩu ngẫu nhiên không thể đoán để thỏa mãn NOT NULL của password_hash
+      const randomPassword = randomUUID();
+      const dummyHashedPassword =
+        await this.passwordService.hashPassword(randomPassword);
+
+      const newUserId = await this.prisma.$transaction(async (tx) => {
+        const newUser = await tx.user.create({
+          data: {
+            email: googleUser.email,
+            passwordHash: dummyHashedPassword,
+            status: 'ACTIVE',
+            mustChangePassword: false,
+          },
+        });
+
+        const studentRole = await tx.role.findUniqueOrThrow({
+          where: { code: 'STUDENT' },
+        });
+
+        await tx.userRole.create({
+          data: {
+            userId: newUser.id,
+            roleId: studentRole.id,
+          },
+        });
+
+        await tx.student.create({
+          data: {
+            studentMasterId: masterData.id,
+            userId: newUser.id,
+          },
+        });
+
+        await tx.studentMaster.update({
+          where: { id: masterData.id },
+          data: { userId: newUser.id },
+        });
+
+        return newUser.id;
+      });
+
+      // Nạp lại dữ liệu đầy đủ quan hệ để đồng nhất kiểu dữ liệu Type-Safe
+      user = await this.prisma.user.findUniqueOrThrow({
+        where: { id: newUserId },
+        include: {
+          userRoles: {
+            include: {
+              role: {
+                include: {
+                  rolePermissions: {
+                    include: { permission: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    // 4. Kiểm tra trạng thái tài khoản
+    if (user.status === 'LOCKED') {
+      throw new ForbiddenException(
+        'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Career Center.',
+      );
+    }
+
+    if (user.status === 'INACTIVE') {
+      throw new ForbiddenException('Tài khoản hiện không còn hoạt động.');
+    }
+
+    // 5. Thu thập danh sách Roles và Permissions phân phẳng
+    const roles: string[] = [];
+    const permissionsSet = new Set<string>();
+
+    for (const ur of user.userRoles) {
+      roles.push(ur.role.code);
+      for (const rp of ur.role.rolePermissions) {
+        permissionsSet.add(rp.permission.code);
+      }
+    }
+
+    // 6. Cấp phát bộ đôi Token nội bộ (JWT Access Token & Refresh Token)
+    const accessToken = await this.tokenService.generateAccessToken({
+      sub: user.id,
+      email: user.email,
+      roles,
+      permissions: Array.from(permissionsSet),
+      mustChangePassword: user.mustChangePassword,
+    });
+
+    const refreshToken = await this.tokenService.generateRefreshToken({
+      sub: user.id,
+    });
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+
+    return { accessToken, refreshToken, user };
   }
 }

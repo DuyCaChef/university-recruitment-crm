@@ -7,6 +7,7 @@ import { AuthService } from './services/auth.service';
 import { AuthController } from './controllers/auth.controller';
 import { PrismaModule } from '../../infrastructure/database/prisma.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
 
 @Module({
   imports: [
@@ -15,7 +16,13 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     JwtModule.register({}), // Đăng ký JwtModule rỗng, cấu hình chi tiết nạp động qua TokenService
   ],
   controllers: [AuthController],
-  providers: [PasswordService, TokenService, AuthService, JwtStrategy],
+  providers: [
+    PasswordService,
+    TokenService,
+    AuthService,
+    JwtStrategy,
+    GoogleStrategy,
+  ],
   exports: [
     PasswordService,
     TokenService, // Export để JwtAuthGuard ở Task S2-04 có thể tái sử dụng

@@ -1,14 +1,18 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
+// Layouts
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { StudentLayout } from "@/components/layout/StudentLayout";
 import { EmployerLayout } from "@/components/layout/EmployerLayout";
 import { CareerCenterLayout } from "@/components/layout/CareerCenterLayout";
 
-import { LoginPage } from "@/pages/auth/LoginPage";
-import { StudentJobsPage } from "@/pages/student/StudentJobsPage";
-import { EmployerPipelinePage } from "@/pages/employer/EmployerPipelinePage";
-import { CareerCenterCrmPage } from "@/pages/career-center/CareerCenterCrmPage";
-import { NotFoundPage } from "@/pages/NotFoundPage";
+// Pages
+import AuthCallbackPage from "@/pages/auth/AuthCallbackPage";
+import LoginPage from "@/pages/auth/LoginPage";
+import StudentJobsPage from "@/pages/student/StudentJobsPage";
+import EmployerPipelinePage from "@/pages/employer/EmployerPipelinePage";
+import CareerCenterCrmPage from "@/pages/career-center/CareerCenterCrmPage";
+import NotFoundPage from "@/pages/NotFoundPage";
 
 export const AppRoutes = () => {
   return (
@@ -17,11 +21,14 @@ export const AppRoutes = () => {
         {/* Điều hướng mặc định về /login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* 1. Nhánh Auth: Đăng nhập & Đăng ký */}
+        {/* 1. Nhánh Xác thực */}
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<LoginPage />} />
         </Route>
+
+        {/* Tiếp nhận chuyển hướng Google SSO */}
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
         {/* 2. Nhánh Sinh viên: Top Navbar */}
         <Route path="/student" element={<StudentLayout />}>
@@ -32,7 +39,7 @@ export const AppRoutes = () => {
           <Route path="applications" element={<StudentJobsPage />} />
         </Route>
 
-        {/* 3. Nhánh Nhà tuyển dụng: Fixed Dark Sidebar */}
+        {/* 3. Nhánh Nhà tuyển dụng: Sidebar tối */}
         <Route path="/employer" element={<EmployerLayout />}>
           <Route
             index
@@ -45,7 +52,7 @@ export const AppRoutes = () => {
           <Route path="profile" element={<EmployerPipelinePage />} />
         </Route>
 
-        {/* 4. Nhánh Cán bộ Hướng nghiệp: Fixed AGU Blue Sidebar */}
+        {/* 4. Nhánh Cán bộ Hướng nghiệp: Sidebar AGU Blue */}
         <Route path="/career-center" element={<CareerCenterLayout />}>
           <Route
             index
@@ -58,9 +65,11 @@ export const AppRoutes = () => {
           <Route path="reports" element={<CareerCenterCrmPage />} />
         </Route>
 
-        {/* Xử lý 404 Not Found */}
+        {/* Trang 404 Fallback */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   );
 };
+
+export default AppRoutes;
