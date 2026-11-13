@@ -5,12 +5,13 @@ import { AppService } from './app.service';
 import { PrismaModule } from './infrastructure/database/prisma.module';
 import { StorageModule } from './infrastructure/storage/storage.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { StudentModule } from './modules/student/student.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
 
 @Module({
-  imports: [PrismaModule, StorageModule, AuthModule],
+  imports: [PrismaModule, StorageModule, AuthModule, StudentModule],
   controllers: [AppController],
   providers: [
     AppService,
