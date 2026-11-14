@@ -41,6 +41,7 @@ import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
+import { UpdateVisibilityDto } from '../dto/update-visibility.dto';
 
 @ApiTags('Student - Prfile, Skills, Experiences, Projects')
 @ApiBearerAuth('JWT-auth')
@@ -89,6 +90,20 @@ export class StudentController {
   })
   updateMyProfile(@Req() req: any, @Body() dto: UpdateStudentProfileDto) {
     return this.studentService.updateMyProfile(this.extractActorId(req), dto);
+  }
+
+  //Endpoint Bật hoặc tắt hiển thị hồ sơ nghề nghiệp công khai (PATCH /api/v1/students/me/visibility)
+  @Patch('me/visibility')
+  @ApiOperation({ summary: 'Bật hoặc tắt hồ sơ nghề nghiệp công khai' })
+  @ApiResponse({
+    status: 200,
+    description: 'Cập nhật trạng thái hiển thị thành công.',
+  })
+  updateVisibility(@Req() req: any, @Body() dto: UpdateVisibilityDto) {
+    return this.studentService.updateCareerProfileVisibility(
+      this.extractActorId(req),
+      dto.visibility,
+    );
   }
 
   // =========================================================================

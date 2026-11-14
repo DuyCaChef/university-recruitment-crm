@@ -18,6 +18,7 @@ import {
 import { CreateProjectDto, UpdateProjectDto } from '../dto/project.dto';
 import { StorageService } from '../../../infrastructure/storage/storage.service';
 import { UpdateStudentCvDto, UploadStudentCvDto } from '../dto/student-cv.dto';
+import { PublicCareerProfileQueryDto } from '../dto/public-career-profile.dto';
 import { randomUUID } from 'crypto';
 import path from 'path/win32';
 
@@ -125,8 +126,148 @@ export class StudentService {
       },
     };
   }
+  // Cập nhật trạng thái hiển thị hồ sơ nghề nghiệp công khai (PATCH /api/v1/students/me/career-profile/visibility)
+  async updateCareerProfileVisibility(actorId: string, visibility: boolean) {
+    const student = await this.resolveStudentByActorId(actorId);
+    const updated = await this.prisma.student.update({
+      where: { id: student.id },
+      data: { careerProfileVisibility: visibility },
+      select: {
+        id: true,
+        careerProfileVisibility: true,
+        updatedAt: true,
+      },
+    });
 
-  // Cập  nh hồ sơ cá nhân (PATCH /api/v1/students/me)
+    return {
+      statusCode: 200,
+      message: visibility
+        ? 'Đã bật hồ sơ nghề nghiệp công khai.'
+        : 'Đã tắt hồ sơ nghề nghiệp công khai.',
+      data: updated,
+    };
+  }
+
+  // Tìm kiếm hồ sơ nghề nghiệp công khai (GET /api/v1/career-profiles?major=&skill=)
+  async searchPublicCareerProfiles(query: PublicCareerProfileQueryDto) {
+    const students = await this.prisma.student.findMany({
+      where: {
+        careerProfileVisibility: true,
+        user: { status: 'ACTIVE' },
+        studentMaster: {
+          status: 'ACTIVE',
+          ...(query.major && {
+            major: { contains: query.major, mode: 'insensitive' },
+          }),
+        },
+        ...(query.skill && {
+          skills: {
+            some: {
+              skillName: { contains: query.skill, mode: 'insensitive' },
+            },
+          },
+        }),
+      },
+      include: this.publicCareerProfileInclude(),
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    return {
+      statusCode: 200,
+      message: 'Tìm kiếm hồ sơ nghề nghiệp công khai thành công.',
+      data: {
+        total: students.length,
+        items: students.map((student) =>
+          this.formatPublicCareerProfile(student),
+        ),
+      },
+    };
+  }
+
+  // Xem chi tiết hồ sơ nghề nghiệp công khai (GET /api/v1/career-profiles/:studentId)
+  async getPublicCareerProfile(studentId: string) {
+    const student = await this.prisma.student.findFirst({
+      where: {
+        id: studentId,
+        careerProfileVisibility: true,
+        user: { status: 'ACTIVE' },
+        studentMaster: { status: 'ACTIVE' },
+      },
+      include: this.publicCareerProfileInclude(),
+    });
+
+    if (!student) {
+      throw new NotFoundException(
+        'Không tìm thấy hồ sơ nghề nghiệp công khai.',
+      );
+    }
+
+    return {
+      statusCode: 200,
+      message: 'Lấy hồ sơ nghề nghiệp công khai thành công.',
+      data: this.formatPublicCareerProfile(student),
+    };
+  }
+
+  // Hàm include để lấy dữ liệu liên quan của hồ sơ nghề nghiệp công khai
+  private publicCareerProfileInclude() {
+    return {
+      studentMaster: {
+        select: {
+          fullName: true,
+          major: true,
+          faculty: true,
+          academicYear: true,
+        },
+      },
+      skills: {
+        orderBy: { createdAt: 'asc' as const },
+        select: { skillName: true, proficiency: true },
+      },
+      experiences: {
+        orderBy: { startDate: 'desc' as const },
+        select: {
+          companyName: true,
+          position: true,
+          startDate: true,
+          endDate: true,
+          description: true,
+        },
+      },
+      projects: {
+        orderBy: [
+          { startDate: 'desc' as const },
+          { createdAt: 'desc' as const },
+        ],
+        select: {
+          name: true,
+          description: true,
+          role: true,
+          technologies: true,
+          projectUrl: true,
+          startDate: true,
+          endDate: true,
+        },
+      },
+    };
+  }
+
+  // Chuẩn hóa dữ liệu hồ sơ nghề nghiệp công khai trả về Client (Chuyển đổi BigInt -> Number, loại bỏ các trường nhạy cảm)
+  private formatPublicCareerProfile(student: any) {
+    return {
+      studentId: student.id,
+      fullName: student.studentMaster.fullName,
+      major: student.studentMaster.major,
+      faculty: student.studentMaster.faculty,
+      academicYear: student.studentMaster.academicYear,
+      bio: student.bio,
+      skills: student.skills,
+      experiences: student.experiences,
+      projects: student.projects,
+    };
+  }
+
+  // Cập nhật hồ sơ cá nhân (PATCH /api/v1/students/me)
   async updateMyProfile(actorId: string, dto: UpdateStudentProfileDto) {
     const student = await this.resolveStudentByActorId(actorId);
 
@@ -565,8 +706,7 @@ export class StudentService {
     dto: UploadStudentCvDto,
   ) {
     const student = await this.resolveStudentByActorId(actorId);
-    const bucket =
-      process.env.MINIO_DEFAULT_BUCKET || 'agu-crm-storage';
+    const bucket = process.env.MINIO_DEFAULT_BUCKET || 'agu-crm-storage';
 
     // Tạo storageKey an toàn do Backend kiểm soát, chống Path Traversal
     const storageKey = `resumes/${student.id}/${randomUUID()}.pdf`;
@@ -660,8 +800,7 @@ export class StudentService {
       throw new NotFoundException('Không tìm thấy bản CV yêu cầu');
     }
 
-    const bucket =
-      process.env.MINIO_DEFAULT_BUCKET || 'agu-crm-storage';
+    const bucket = process.env.MINIO_DEFAULT_BUCKET || 'agu-crm-storage';
     const url = await this.storageService.getFileUrl(
       bucket,
       cv.file.storageKey,
