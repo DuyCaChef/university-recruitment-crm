@@ -19,6 +19,7 @@ import { CreateProjectDto, UpdateProjectDto } from '../dto/project.dto';
 import { StorageService } from '../../../infrastructure/storage/storage.service';
 import { UpdateStudentCvDto, UploadStudentCvDto } from '../dto/student-cv.dto';
 import { PublicCareerProfileQueryDto } from '../dto/public-career-profile.dto';
+import { AuditLogService } from '../../../infrastructure/audit/audit-log.service';
 import { randomUUID } from 'crypto';
 import path from 'path/win32';
 
@@ -28,6 +29,7 @@ export class StudentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storageService: StorageService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   /**
@@ -129,6 +131,7 @@ export class StudentService {
   // Cập nhật trạng thái hiển thị hồ sơ nghề nghiệp công khai (PATCH /api/v1/students/me/career-profile/visibility)
   async updateCareerProfileVisibility(actorId: string, visibility: boolean) {
     const student = await this.resolveStudentByActorId(actorId);
+    const previousVisibility = student.careerProfileVisibility;
     const updated = await this.prisma.student.update({
       where: { id: student.id },
       data: { careerProfileVisibility: visibility },
@@ -137,6 +140,16 @@ export class StudentService {
         careerProfileVisibility: true,
         updatedAt: true,
       },
+    });
+
+    // Ghi lại sự kiện thay đổi trạng thái hiển thị hồ sơ nghề nghiệp công khai vào Audit Log
+    await this.auditLogService.record({
+      actorUserId: actorId,
+      action: 'STUDENT_CAREER_PROFILE_VISIBILITY_CHANGED',
+      resourceType: 'STUDENT',
+      resourceId: student.id,
+      oldValues: { careerProfileVisibility: previousVisibility },
+      newValues: { careerProfileVisibility: visibility },
     });
 
     return {
@@ -927,6 +940,24 @@ export class StudentService {
     // Dọn dẹp vật lý trên MinIO sau khi CSDL đã commit thành công
     const bucket = process.env.MINIO_DEFAULT_BUCKET || 'agu-crm-storage';
     await this.storageService.deleteFile(bucket, targetCv.file.storageKey);
+
+    // Ghi lại sự kiện xóa CV vào Audit Log
+    await this.auditLogService.record({
+      actorUserId: actorId,
+      action: 'STUDENT_CV_DELETED',
+      resourceType: 'STUDENT_CV',
+      resourceId: cvId,
+      oldValues: {
+        studentId: student.id,
+        title: targetCv.title,
+        isDefault: targetCv.isDefault,
+        fileId: targetCv.fileId,
+        originalName: targetCv.file.originalName,
+        mimeType: targetCv.file.mimeType,
+        sizeBytes: targetCv.file.sizeBytes,
+      },
+      newValues: { deleted: true },
+    });
 
     return {
       deletedId: cvId,

@@ -9,9 +9,16 @@ import { StudentModule } from './modules/student/student.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
+import { AuditLogModule } from './infrastructure/audit/audit-log.module';
 
 @Module({
-  imports: [PrismaModule, StorageModule, AuthModule, StudentModule],
+  imports: [
+    PrismaModule,
+    StorageModule,
+    AuditLogModule,
+    AuthModule,
+    StudentModule,
+  ],
   controllers: [AppController],
   providers: [
     AppService,

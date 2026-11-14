@@ -13,6 +13,7 @@ import { TokenService } from './token.service';
 import { LoginDto } from '../dto/login.dto';
 import { ChangePasswordDto } from '../dto/change-password.dto';
 import { RegisterStudentDto } from '../dto/register-student.dto';
+import { AuditLogService } from '../../../infrastructure/audit/audit-log.service';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +21,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
     private readonly tokenService: TokenService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   /**
@@ -257,7 +259,7 @@ export class AuthService {
     );
 
     // 4. Mở DB Transaction để đảm bảo tính toàn vẹn
-    return this.prisma.$transaction(async (tx) => {
+    const registrationResult = await this.prisma.$transaction(async (tx) => {
       // 4.1. Tạo tài khoản người dùng mới
       const newUser = await tx.user.create({
         data: {
@@ -311,6 +313,23 @@ export class AuthService {
         },
       };
     });
+
+    const registeredStudent = await this.prisma.student.findUniqueOrThrow({
+      where: { userId: registrationResult.data.userId },
+      select: { id: true },
+    });
+    await this.auditLogService.record({
+      actorUserId: registrationResult.data.userId,
+      action: 'STUDENT_PROFILE_ACTIVATED',
+      resourceType: 'STUDENT',
+      resourceId: registeredStudent.id,
+      newValues: {
+        provisioning: 'STUDENT_REGISTRATION',
+        studentMasterId: masterData.id,
+      },
+    });
+
+    return registrationResult;
   }
 
   /**
@@ -407,6 +426,22 @@ export class AuthService {
         });
 
         return newUser.id;
+      });
+
+      // Ghi lại sự kiện tạo hồ sơ sinh viên mới thông qua Google SSO vào Audit Log
+      const createdStudent = await this.prisma.student.findUniqueOrThrow({
+        where: { userId: newUserId },
+        select: { id: true },
+      });
+      await this.auditLogService.record({
+        actorUserId: newUserId,
+        action: 'STUDENT_JIT_PROVISIONED',
+        resourceType: 'STUDENT',
+        resourceId: createdStudent.id,
+        newValues: {
+          provisioning: 'GOOGLE_SSO',
+          studentMasterId: masterData.id,
+        },
       });
 
       // Nạp lại dữ liệu đầy đủ quan hệ để đồng nhất kiểu dữ liệu Type-Safe
