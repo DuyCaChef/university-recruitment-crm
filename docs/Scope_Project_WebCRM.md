@@ -188,8 +188,8 @@ Xây dựng một hệ thống Web CRM tập trung, hỗ trợ trường đại 
   3. *Business Status & Ownership:* Đối tượng nghiệp vụ có đủ điều kiện không (Doanh nghiệp đã được duyệt chưa? Dữ liệu có thuộc sở hữu của doanh nghiệp mình không?).
 * **Đăng ký sinh viên:**
   - Nhà trường cung cấp bảng dữ liệu gốc `student_masters` (gồm MSSV, Họ tên, Ngành học).
-  - Sinh viên nhập MSSV, email và mật khẩu. Backend đối soát dữ liệu gốc để xác thực danh tính và kích hoạt bản ghi hồ sơ sinh viên trong giao dịch nguyên tử (Atomic Transaction).
-  - Không bắt buộc OTP; một MSSV chỉ liên kết duy nhất với một tài khoản người dùng.
+  - Sinh viên đăng nhập qua Google SSO bằng email học thuật `@student.agu.edu.vn`. Backend đối soát whitelist `student_masters` và tự động kích hoạt hồ sơ trong giao dịch nguyên tử (Atomic Transaction).
+  - Một email học thuật/MSSV chỉ liên kết duy nhất với một tài khoản người dùng; mật khẩu do Google Workspace quản lý.
 * **Đăng ký doanh nghiệp:**
   - Nhà tuyển dụng tự khai báo thông tin pháp nhân ban đầu. Sau khi tạo tài khoản, doanh nghiệp chuyển trạng thái chờ xét duyệt (`PENDING`).
   - Chỉ doanh nghiệp đã được Career Center duyệt (`APPROVED`) mới được tạo và công bố tin tuyển dụng.
@@ -197,7 +197,7 @@ Xây dựng một hệ thống Web CRM tập trung, hỗ trợ trường đại 
 ### 8.2. Quản lý hồ sơ sinh viên (Module 02)
 * Quản lý thông tin cá nhân, định danh sinh viên, chuyên ngành đào tạo, tình trạng học tập (`ACTIVE`, `GRADUATED`, `SUSPENDED`).
 * Quản lý kỹ năng (Skills), kinh nghiệm thực tế (Experiences) và dự án tiêu biểu (Projects).
-* Quản lý đa bản CV (Multiple CVs): Sinh viên có thể tải lên nhiều phiên bản CV (PDF/Word), đặt CV mặc định và chỉ định bản CV cụ thể khi ứng tuyển.
+* Quản lý đa bản CV (Multiple CVs): Sinh viên có thể tải lên nhiều phiên bản CV PDF (tối đa 5MB), đặt CV mặc định và chỉ định bản CV cụ thể khi ứng tuyển. Tệp được lưu trong MinIO bucket private `agu-crm-storage`, dưới prefix `resumes/`; chỉ truy cập qua presigned URL ngắn hạn.
 * Quyền riêng tư hồ sơ nghề nghiệp: Sinh viên có quyền bật/tắt chế độ hiển thị hồ sơ năng lực công khai (Public Career Profile).
 
 ### 8.3. Khám phá ứng viên (Module 03)

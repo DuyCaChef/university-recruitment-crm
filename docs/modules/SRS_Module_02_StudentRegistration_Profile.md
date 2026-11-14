@@ -533,8 +533,9 @@ Cơ sở dữ liệu Module 02 được thiết kế tuân thủ nghiêm ngặt 
   1. **Tải lên CV (Upload CV):**
      - Chỉ chấp nhận định dạng tệp tin PDF (`mime_type = application/pdf`).
      - Giới hạn dung lượng tệp: Tối đa 5MB (`size_bytes <= 5242880`).
-     - Tệp tin nhị phân được truyền phát trực tiếp và lưu trữ an toàn trên MinIO S3 Object Storage dưới Bucket bảo mật `student-cvs`.
-     - Đường dẫn lưu trữ (`storage_key`) có định dạng phân cấp không đoán trước: `cvs/{student_id}/{uuid}-{file_name}.pdf`.
+     - Tệp tin nhị phân được truyền phát trực tiếp và lưu trữ an toàn trên MinIO S3 Object Storage dưới Bucket private `agu-crm-storage`.
+     - Đường dẫn lưu trữ (`storage_key`) có định dạng phân cấp không đoán trước: `resumes/{student_id}/{uuid}.pdf`.
+     - Bucket phải luôn ở chế độ private; chỉ Backend được cấp presigned URL có thời hạn ngắn để truy cập tệp.
      - Bảng `files` lưu metadata của tệp; bảng `student_cvs` lưu thông tin ngữ cảnh ứng tuyển (`title`, `is_default`).
   2. **Quản lý CV mặc định (Default CV Setting):**
      - Sinh viên được quyền thiết lập 1 bản CV làm mặc định (`is_default = true`).
@@ -601,7 +602,7 @@ MINIO_PORT=9000
 MINIO_USE_SSL=false
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
-MINIO_BUCKET_CVS=student-cvs
+MINIO_DEFAULT_BUCKET=agu-crm-storage
 ```
 
 ### 10.2. Chiến lược xác thực Google Strategy (`google.strategy.ts`)
@@ -832,11 +833,11 @@ async handleGoogleAuth(googleUser: { email: string; fullName: string }) {
 | **13**| `DELETE`| `/api/v1/students/me/projects/:id` | `Bearer Token` (`STUDENT`) | Xóa bản ghi dự án. |
 | **14**| `GET` | `/api/v1/students/me/cvs` | `Bearer Token` (`STUDENT`) | Lấy danh sách CV tải lên của sinh viên. |
 | **15**| `POST`| `/api/v1/students/me/cvs` | `Bearer Token` (`STUDENT`) | Upload tệp tin CV mới (Multipart form-data) lên MinIO. |
-| **16**| `PATCH`| `/api/v1/students/me/cvs/:id/default`| `Bearer Token` (`STUDENT`) | Thiết lập bản CV này làm mặc định. |
-| **17**| `DELETE`| `/api/v1/students/me/cvs/:id` | `Bearer Token` (`STUDENT`) | Xóa bản CV (Xóa metadata và tệp tin trên MinIO). |
+| **16**| `PATCH`| `/api/v1/students/me/cvs/:cvId/default`| `Bearer Token` (`STUDENT`) | Thiết lập bản CV này làm mặc định. |
+| **17**| `DELETE`| `/api/v1/students/me/cvs/:cvId` | `Bearer Token` (`STUDENT`) | Xóa bản CV (Xóa metadata và tệp tin trên MinIO). |
 | **18**| `PATCH`| `/api/v1/students/me/visibility` | `Bearer Token` (`STUDENT`) | Bật/tắt trạng thái hiển thị Career Profile công khai. |
-| **19**| `GET` | `/api/v1/career-profiles` | `Bearer Token` (`EMPLOYER, CC`) | Tìm kiếm danh sách hồ sơ nghề nghiệp sinh viên công khai. |
-| **20**| `GET` | `/api/v1/career-profiles/:studentId` | `Bearer Token` (`EMPLOYER, CC`) | Xem chi tiết Career Profile công khai của một sinh viên. |
+| **19**| `GET` | `/api/v1/career-profiles` | `Bearer Token` (`EMPLOYER, CAREER_CENTER`) | Tìm kiếm danh sách hồ sơ nghề nghiệp sinh viên công khai. |
+| **20**| `GET` | `/api/v1/career-profiles/:studentId` | `Bearer Token` (`EMPLOYER, CAREER_CENTER`) | Xem chi tiết Career Profile công khai của một sinh viên. |
 
 ### 11.2. Đặc tả Chi tiết Request / Response mẫu
 
@@ -930,7 +931,7 @@ async handleGoogleAuth(googleUser: { email: string; fullName: string }) {
    ```
    Nếu kẻ tấn công gửi ID của sinh viên khác, Prisma sẽ trả về lỗi `Not Found` hoặc Service trả `403 Forbidden`, ngăn chặn hoàn toàn lỗ hổng IDOR (Insecure Direct Object Reference).
 2. **Kiểm soát Truy cập Tệp tin CV trên MinIO S3:**
-   - Bucket `student-cvs` được cấu hình ở chế độ riêng tư hoàn toàn (`Private`).
+   - Bucket `agu-crm-storage` được cấu hình ở chế độ riêng tư hoàn toàn (`Private`).
    - Mọi thao tác xem hoặc tải xuống tệp CV đều phải thông qua API ủy quyền của Backend hoặc được cấp **Pre-signed URL có thời hạn ngắn (ví dụ: 15 phút)**.
    - Tuyệt đối không để lộ URL lưu trữ công khai trực tiếp tới hạ tầng MinIO.
 3. **Phòng chống dò quét danh tính (Anti-Enumeration):** Các thông báo lỗi xác thực Google SSO trả về chung mã `401 Unauthorized` với nội dung chuẩn hóa, không tiết lộ chi tiết nội bộ hệ thống.
@@ -969,7 +970,7 @@ async handleGoogleAuth(googleUser: { email: string; fullName: string }) {
 | **TC-STU-06** | Thêm Kinh nghiệm làm việc hợp lệ | `startDate: "2024-01-01"`, `endDate: "2024-06-30"`. | `endDate >= startDate`. | **201 Created**. Lưu thành công vào `student_experiences`. |
 | **TC-STU-07** | Thêm Kinh nghiệm ngày kết thúc trước ngày bắt đầu | `startDate: "2024-06-01"`, `endDate: "2024-01-01"`. | Vi phạm quy tắc `BR-STU-09`. | **400 Bad Request** ("Ngày kết thúc không thể nhỏ hơn ngày bắt đầu"). |
 | **TC-STU-08** | Can thiệp sửa Dự án của sinh viên khác (IDOR) | Sinh viên A gửi `PATCH /api/v1/students/me/projects/:id_cua_B`. | Dự án thuộc quyền sở hữu của Sinh viên B. | **403 Forbidden** hoặc **404 Not Found**. Không có dữ liệu nào bị thay đổi. |
-| **TC-STU-09** | Tải lên CV định dạng PDF hợp lệ | Upload tệp `CV_NguyenVanAn.pdf` (2MB). | Tệp PDF hợp lệ, dung lượng $< 5MB$. | **201 Created**. Tệp lưu vào MinIO S3, tạo bản ghi `files` và `student_cvs`. |
+| **TC-STU-09** | Tải lên CV định dạng PDF hợp lệ | Upload tệp `CV_NguyenVanAn.pdf` (2MB). | Tệp PDF hợp lệ, dung lượng $\le 5MB$. | **201 Created**. Tệp lưu vào `agu-crm-storage/resumes/`, tạo bản ghi `files` và `student_cvs`. |
 | **TC-STU-10** | Tải lên CV sai định dạng (.docx, .exe) | Upload tệp `CV.docx` hoặc `trojan.exe`. | Vi phạm quy định định dạng tệp. | **400 Bad Request** ("Hệ thống chỉ chấp nhận tệp tin định dạng PDF"). |
 | **TC-STU-11** | Thiết lập CV mặc định | Sinh viên chọn CV 2 làm mặc định. | CSDL đang có CV 1 mang `is_default = true`. | **200 OK**. CV 2 chuyển thành `true`, CV 1 tự động chuyển về `false`. |
 | **TC-STU-12** | Sinh viên tắt Career Profile Visibility | Gọi `PATCH /api/v1/students/me/visibility` với `visibility: false`. | Cập nhật `students.career_profile_visibility = false`. | **200 OK**. Employer tìm kiếm hồ sơ sẽ không thấy sinh viên này. |
@@ -988,7 +989,7 @@ Bảng ma trận truy vết chứng minh mối liên kết chặt chẽ giữa Y
 | **FR-STU-01** | Kích hoạt hồ sơ & JIT Provisioning | `student_masters`, `users`, `user_roles`, `students` | BR-02, BR-03, BR-04, BR-05, BR-06, BR-07 | `GET /api/v1/auth/google/callback` | TC-SSO-01, 02, 03, 04, 05, 06 |
 | **FR-STU-02** | Quản lý Profile cá nhân | `students`, `student_masters` | BR-01, BR-02, BR-07, BR-14 | `GET /api/v1/students/me`<br>`PATCH /api/v1/students/me` | TC-STU-01, 02, 03 |
 | **FR-STU-03** | Quản lý Kỹ năng, Kinh nghiệm, Dự án | `student_skills`, `student_experiences`, `student_projects` | BR-01, BR-08, BR-09 | `POST/PATCH/DELETE /api/v1/students/me/skills`<br>`POST/PATCH/DELETE /api/v1/students/me/experiences`<br>`POST/PATCH/DELETE /api/v1/students/me/projects` | TC-STU-04, 05, 06, 07, 08 |
-| **FR-STU-04** | Quản lý Đa hồ sơ CV & MinIO Storage | `student_cvs`, `files` | BR-01, BR-10, BR-11 | `GET/POST /api/v1/students/me/cvs`<br>`PATCH /api/v1/students/me/cvs/:id/default`<br>`DELETE /api/v1/students/me/cvs/:id` | TC-STU-09, 10, 11, 15 |
+| **FR-STU-04** | Quản lý Đa hồ sơ CV & MinIO Storage | `student_cvs`, `files` | BR-01, BR-10, BR-11 | `GET/POST /api/v1/students/me/cvs`<br>`PATCH /api/v1/students/me/cvs/:cvId/default`<br>`DELETE /api/v1/students/me/cvs/:cvId` | TC-STU-09, 10, 11, 15 |
 | **FR-STU-05** | Public Career Profile & Search | `students`, `student_skills`, `student_experiences`, `student_projects` | BR-12, BR-13 | `PATCH /api/v1/students/me/visibility`<br>`GET /api/v1/career-profiles`<br>`GET /api/v1/career-profiles/:studentId` | TC-STU-12, 13, 14 |
 
 ---

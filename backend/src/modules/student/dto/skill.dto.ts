@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { IsNotBlank } from '../../../common/validators/is-not-blank.validator';
 
 export class CreateSkillDto {
   @ApiProperty({
@@ -9,6 +10,7 @@ export class CreateSkillDto {
   })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString({ message: 'Tên kỹ năng phải là chuỗi ký tự' })
+  @IsNotBlank({ message: 'Tên kỹ năng không được chỉ chứa khoảng trắng' })
   @IsNotEmpty({ message: 'Tên kỹ năng không được để trống' })
   @MaxLength(100, { message: 'Tên kỹ năng không được vượt quá 100 ký tự' })
   skillName: string;
@@ -20,6 +22,7 @@ export class CreateSkillDto {
   @IsOptional()
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString({ message: 'Mức độ thành thạo phải là chuỗi ký tự' })
+  @IsNotBlank({ message: 'Mức độ thành thạo không được chỉ chứa khoảng trắng' })
   @MaxLength(30, { message: 'Mức độ thành thạo không được vượt quá 30 ký tự' })
   proficiency?: string;
 }
@@ -32,6 +35,7 @@ export class UpdateSkillDto {
   @IsOptional()
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString({ message: 'Tên kỹ năng phải là chuỗi ký tự' })
+  @IsNotBlank({ message: 'Tên kỹ năng không được chỉ chứa khoảng trắng' })
   @IsNotEmpty({ message: 'Tên kỹ năng không được để trống' })
   @MaxLength(100, { message: 'Tên kỹ năng không được vượt quá 100 ký tự' })
   skillName?: string;
@@ -43,6 +47,7 @@ export class UpdateSkillDto {
   @IsOptional()
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString({ message: 'Mức độ thành thạo phải là chuỗi ký tự' })
+  @IsNotBlank({ message: 'Mức độ thành thạo không được chỉ chứa khoảng trắng' })
   @MaxLength(30, { message: 'Mức độ thành thạo không được vượt quá 30 ký tự' })
   proficiency?: string;
 }

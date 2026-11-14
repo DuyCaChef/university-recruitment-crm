@@ -7,6 +7,7 @@ import {
   IsUrl,
   MaxLength,
 } from 'class-validator';
+import { IsNotBlank } from '../../../common/validators/is-not-blank.validator';
 
 export class CreateProjectDto {
   @ApiProperty({
@@ -14,6 +15,7 @@ export class CreateProjectDto {
     description: 'Tên dự án học tập, nghiên cứu khoa học hoặc sản phẩm thực tế',
   })
   @IsString({ message: 'Tên dự án phải là chuỗi ký tự' })
+  @IsNotBlank({ message: 'Tên dự án không được chỉ chứa khoảng trắng' })
   @IsNotEmpty({ message: 'Tên dự án không được để trống' })
   @MaxLength(200, { message: 'Tên dự án không được vượt quá 200 ký tự' })
   name: string;

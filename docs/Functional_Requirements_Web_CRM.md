@@ -175,8 +175,8 @@ Tài liệu này chuẩn hóa và chuyển đổi toàn bộ phạm vi nghiệp 
 - **Priority:** P0
 - **Actor:** Student
 - **Hành vi hệ thống:**
-  1. Cho phép sinh viên tải lên nhiều tệp CV (định dạng PDF/Word, kích thước tối đa 5MB).
-  2. Tệp binary được đẩy lên **MinIO Object Storage**; database bảng `student_cvs` lưu trữ metadata, URL tham chiếu và cờ đánh dấu CV mặc định (`is_default = TRUE`).
+  1. Cho phép sinh viên tải lên nhiều tệp CV PDF (kích thước tối đa 5MB).
+  2. Tệp binary được đẩy lên **MinIO Object Storage**, bucket private `agu-crm-storage` dưới prefix `resumes/`; database bảng `student_cvs` lưu trữ metadata và cờ đánh dấu CV mặc định (`is_default = TRUE`).
   3. Cho phép tải xuống, đổi tên và xóa bản CV trong danh mục cá nhân.
 
 #### FR-STU-04: Cấu hình Quyền riêng tư Hồ sơ (Profile Visibility)

@@ -780,7 +780,17 @@ export class StudentService {
         `Giao dịch CSDL thất bại khi lưu CV, tiến hành cleanup object [${storageKey}]`,
         error,
       );
-      await this.storageService.deleteFile(bucket, storageKey);
+
+      // Xóa tệp tin trên MinIO (dùng khi cleanup snapshot lỗi hoặc xóa CV)
+      const cleanupSucceeded = await this.storageService.deleteFile(
+        bucket,
+        storageKey,
+      );
+      if (!cleanupSucceeded) {
+        this.logger.error(
+          `Không thể cleanup object MinIO mồ côi [${bucket}] ${storageKey}`,
+        );
+      }
       throw new InternalServerErrorException(
         'Không thể lưu thông tin CV vào cơ sở dữ liệu. Vui lòng thử lại.',
       );

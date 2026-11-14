@@ -197,8 +197,6 @@ model StudentSkill {
 
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  // Chống gắn trùng 1 kỹ năng nhiều lần cho cùng 1 sinh viên
-  @@unique([studentId, skillName], map: "uq_student_skills_name")
   @@map("student_skills")
 }
 

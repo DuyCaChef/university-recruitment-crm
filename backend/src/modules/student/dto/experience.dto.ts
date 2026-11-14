@@ -6,6 +6,7 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
+import { IsNotBlank } from '../../../common/validators/is-not-blank.validator';
 
 export class CreateExperienceDto {
   @ApiProperty({
@@ -13,6 +14,7 @@ export class CreateExperienceDto {
     description: 'Tên công ty hoặc tổ chức từng làm việc/thực tập',
   })
   @IsString({ message: 'Tên công ty phải là chuỗi ký tự' })
+  @IsNotBlank({ message: 'Tên công ty không được chỉ chứa khoảng trắng' })
   @IsNotEmpty({ message: 'Tên công ty không được để trống' })
   @MaxLength(150, { message: 'Tên công ty không được vượt quá 150 ký tự' })
   companyName: string;
@@ -22,6 +24,7 @@ export class CreateExperienceDto {
     description: 'Vị trí đảm nhiệm',
   })
   @IsString({ message: 'Vị trí công việc phải là chuỗi ký tự' })
+  @IsNotBlank({ message: 'Vị trí công việc không được chỉ chứa khoảng trắng' })
   @IsNotEmpty({ message: 'Vị trí công việc không được để trống' })
   @MaxLength(150, { message: 'Vị trí công việc không được vượt quá 150 ký tự' })
   position: string;

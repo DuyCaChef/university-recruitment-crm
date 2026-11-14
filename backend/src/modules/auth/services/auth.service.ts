@@ -259,7 +259,7 @@ export class AuthService {
     );
 
     // 4. Mở DB Transaction để đảm bảo tính toàn vẹn
-    const registrationResult = await this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       // 4.1. Tạo tài khoản người dùng mới
       const newUser = await tx.user.create({
         data: {
@@ -313,23 +313,6 @@ export class AuthService {
         },
       };
     });
-
-    const registeredStudent = await this.prisma.student.findUniqueOrThrow({
-      where: { userId: registrationResult.data.userId },
-      select: { id: true },
-    });
-    await this.auditLogService.record({
-      actorUserId: registrationResult.data.userId,
-      action: 'STUDENT_PROFILE_ACTIVATED',
-      resourceType: 'STUDENT',
-      resourceId: registeredStudent.id,
-      newValues: {
-        provisioning: 'STUDENT_REGISTRATION',
-        studentMasterId: masterData.id,
-      },
-    });
-
-    return registrationResult;
   }
 
   /**
