@@ -2,8 +2,10 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  InternalServerErrorException,
   Injectable,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
@@ -14,10 +16,18 @@ import {
   UpdateExperienceDto,
 } from '../dto/experience.dto';
 import { CreateProjectDto, UpdateProjectDto } from '../dto/project.dto';
+import { StorageService } from '../../../infrastructure/storage/storage.service';
+import { UpdateStudentCvDto, UploadStudentCvDto } from '../dto/student-cv.dto';
+import { randomUUID } from 'crypto';
+import path from 'path/win32';
 
 @Injectable()
 export class StudentService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(StudentService.name);
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storageService: StorageService,
+  ) {}
 
   /**
    * Chốt chặn cốt lõi: Ánh xạ actor.id (users.id từ JWT) -> hồ sơ Student thuộc sở hữu.
@@ -522,6 +532,266 @@ export class StudentService {
     return {
       statusCode: 200,
       message: 'Xóa dự án cá nhân thành công.',
+    };
+  }
+
+  // =========================================================================
+  // 5. Quản lý CV (CRUD /api/v1/students/me/cvs)
+  // =========================================================================
+  // Chuẩn hóa dữ liệu CV trả về Client (Chuyển đổi BigInt -> Number, loại bỏ các trường nhạy cảm)
+  private formatCvResponse(cv: any) {
+    return {
+      id: cv.id,
+      title: cv.title,
+      isDefault: cv.isDefault,
+      createdAt: cv.createdAt,
+      updatedAt: cv.updatedAt,
+      file: cv.file
+        ? {
+            id: cv.file.id,
+            originalName: cv.file.originalName,
+            mimeType: cv.file.mimeType,
+            sizeBytes: Number(cv.file.sizeBytes),
+            createdAt: cv.file.createdAt,
+          }
+        : null,
+    };
+  }
+
+  // Upload CV mới lên MinIO và lưu metadata vào DB (POST /api/v1/students/me/cvs)
+  async uploadStudentCv(
+    actorId: string,
+    file: Express.Multer.File,
+    dto: UploadStudentCvDto,
+  ) {
+    const student = await this.resolveStudentByActorId(actorId);
+    const bucket =
+      process.env.MINIO_DEFAULT_BUCKET || 'agu-crm-storage';
+
+    // Tạo storageKey an toàn do Backend kiểm soát, chống Path Traversal
+    const storageKey = `resumes/${student.id}/${randomUUID()}.pdf`;
+
+    // Làm sạch tên file gốc trước khi lưu metadata
+    const safeOriginalName = path.basename(file.originalname).slice(0, 255);
+
+    // Bước 1: Tải binary lên MinIO Object Storage
+    await this.storageService.uploadFile(
+      bucket,
+      storageKey,
+      file.buffer,
+      file.mimetype,
+    );
+
+    try {
+      // Bước 2: Mở Prisma Atomic Transaction lưu metadata và xử lý Default CV
+      const createdCv = await this.prisma.$transaction(async (tx) => {
+        const existingCount = await tx.studentCv.count({
+          where: { studentId: student.id },
+        });
+
+        // Nếu là CV đầu tiên hoặc người dùng yêu cầu đặt làm mặc định
+        const shouldBeDefault = existingCount === 0 || Boolean(dto.isDefault);
+
+        if (shouldBeDefault && existingCount > 0) {
+          await tx.studentCv.updateMany({
+            where: { studentId: student.id, isDefault: true },
+            data: { isDefault: false },
+          });
+        }
+
+        const savedFile = await tx.file.create({
+          data: {
+            ownerUserId: actorId,
+            originalName: safeOriginalName,
+            storageKey,
+            mimeType: file.mimetype,
+            sizeBytes: BigInt(file.size),
+          },
+        });
+
+        return await tx.studentCv.create({
+          data: {
+            studentId: student.id,
+            fileId: savedFile.id,
+            title: dto.title.trim(),
+            isDefault: shouldBeDefault,
+          },
+          include: { file: true },
+        });
+      });
+
+      return this.formatCvResponse(createdCv);
+    } catch (error) {
+      // Bước 3: Cơ chế bù trừ (Compensating Cleanup) xóa tệp mồ côi trên MinIO nếu DB thất bại
+      this.logger.error(
+        `Giao dịch CSDL thất bại khi lưu CV, tiến hành cleanup object [${storageKey}]`,
+        error,
+      );
+      await this.storageService.deleteFile(bucket, storageKey);
+      throw new InternalServerErrorException(
+        'Không thể lưu thông tin CV vào cơ sở dữ liệu. Vui lòng thử lại.',
+      );
+    }
+  }
+
+  // Lấy toàn bộ danh sách CV của sinh viên hiện tại (GET /api/v1/students/me/cvs)
+  async getMyCvs(actorId: string) {
+    const student = await this.resolveStudentByActorId(actorId);
+
+    const cvs = await this.prisma.studentCv.findMany({
+      where: { studentId: student.id },
+      include: { file: true },
+      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+    });
+    return cvs.map((cv) => this.formatCvResponse(cv));
+  }
+
+  // Sinh Presigned URL tạm thời (15 phút) để xem trước / tải CV của chính mình (GET /api/v1/students/me/cvs/:cvId/download-url)
+  async getMyCvDownloadUrl(actorId: string, cvId: string) {
+    const student = await this.resolveStudentByActorId(actorId);
+
+    // Scoped Query: Kiểm tra đồng thời cvId và studentId chống IDOR
+    const cv = await this.prisma.studentCv.findFirst({
+      where: { id: cvId, studentId: student.id },
+      include: { file: true },
+    });
+
+    if (!cv) {
+      throw new NotFoundException('Không tìm thấy bản CV yêu cầu');
+    }
+
+    const bucket =
+      process.env.MINIO_DEFAULT_BUCKET || 'agu-crm-storage';
+    const url = await this.storageService.getFileUrl(
+      bucket,
+      cv.file.storageKey,
+      900, // Hết hạn sau 15 phút
+    );
+
+    return {
+      cvId: cv.id,
+      title: cv.title,
+      originalName: cv.file.originalName,
+      url,
+      expiresInSeconds: 900,
+    };
+  }
+
+  // Chuyển đổi CV mặc định (Enforce duy nhất 1 CV default) (PATCH /api/v1/students/me/cvs/:cvId/default)
+  async setDefaultCv(actorId: string, cvId: string) {
+    const student = await this.resolveStudentByActorId(actorId);
+
+    const targetCv = await this.prisma.studentCv.findFirst({
+      where: { id: cvId, studentId: student.id },
+    });
+
+    if (!targetCv) {
+      throw new NotFoundException('Không tìm thấy bản CV yêu cầu');
+    }
+
+    if (targetCv.isDefault) {
+      const current = await this.prisma.studentCv.findUnique({
+        where: { id: cvId },
+        include: { file: true },
+      });
+      return this.formatCvResponse(current);
+    }
+
+    const updatedCv = await this.prisma.$transaction(async (tx) => {
+      // Hạ cờ mặc định của các CV khác thuộc sinh viên này
+      await tx.studentCv.updateMany({
+        where: { studentId: student.id, isDefault: true },
+        data: { isDefault: false },
+      });
+
+      // Bật cờ mặc định cho CV được chọn
+      return await tx.studentCv.update({
+        where: { id: cvId },
+        data: { isDefault: true },
+        include: { file: true },
+      });
+    });
+
+    return this.formatCvResponse(updatedCv);
+  }
+
+  // Đổi tên gợi nhớ của CV (PATCH /api/v1/students/me/cvs/:cvId)
+  async updateMyCvTitle(
+    actorId: string,
+    cvId: string,
+    dto: UpdateStudentCvDto,
+  ) {
+    const student = await this.resolveStudentByActorId(actorId);
+
+    const targetCv = await this.prisma.studentCv.findFirst({
+      where: { id: cvId, studentId: student.id },
+    });
+
+    if (!targetCv) {
+      throw new NotFoundException('Không tìm thấy bản CV yêu cầu');
+    }
+
+    const updated = await this.prisma.studentCv.update({
+      where: { id: cvId },
+      data: { title: dto.title.trim() },
+      include: { file: true },
+    });
+
+    return this.formatCvResponse(updated);
+  }
+
+  // Xóa bản CV và dọn dẹp tệp trên MinIO (nếu không còn snapshot tham chiếu) (DELETE /api/v1/students/me/cvs/:cvId)
+  async deleteMyCv(actorId: string, cvId: string) {
+    const student = await this.resolveStudentByActorId(actorId);
+
+    const targetCv = await this.prisma.studentCv.findFirst({
+      where: { id: cvId, studentId: student.id },
+      include: { file: true },
+    });
+
+    if (!targetCv) {
+      throw new NotFoundException('Không tìm thấy bản CV yêu cầu');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      // Xóa bản ghi trong student_cvs (applications.cv_id sẽ tự động SET NULL theo thiết kế)
+      await tx.studentCv.delete({
+        where: { id: cvId },
+      });
+
+      // Nếu CV bị xóa là CV mặc định, tự động chọn CV mới nhất còn lại làm mặc định
+      if (targetCv.isDefault) {
+        const nextCv = await tx.studentCv.findFirst({
+          where: { studentId: student.id },
+          orderBy: { createdAt: 'desc' },
+        });
+        if (nextCv) {
+          await tx.studentCv.update({
+            where: { id: nextCv.id },
+            data: { isDefault: true },
+          });
+        }
+      }
+
+      // Kiểm tra xem bản ghi File còn bị tham chiếu bởi bảng nào khác không trước khi xóa
+      const remainingRefs = await tx.studentCv.count({
+        where: { fileId: targetCv.fileId },
+      });
+
+      if (remainingRefs === 0) {
+        await tx.file.delete({
+          where: { id: targetCv.fileId },
+        });
+      }
+    });
+
+    // Dọn dẹp vật lý trên MinIO sau khi CSDL đã commit thành công
+    const bucket = process.env.MINIO_DEFAULT_BUCKET || 'agu-crm-storage';
+    await this.storageService.deleteFile(bucket, targetCv.file.storageKey);
+
+    return {
+      deletedId: cvId,
+      message: 'Đã xóa bản CV thành công',
     };
   }
 }
