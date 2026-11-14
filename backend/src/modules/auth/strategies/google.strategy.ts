@@ -1,10 +1,15 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';
+import { PrismaService } from '../../../infrastructure/database/prisma.service';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
-  constructor() {
+  constructor(private readonly prisma: PrismaService) {
     console.log(
       '[DEBUG SSO] Client ID:',
       process.env.GOOGLE_CLIENT_ID ? 'ĐÃ NẠP' : 'RỖNG (UNDEFINED)',
@@ -31,16 +36,30 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     done: VerifyCallback,
   ): Promise<any> {
     const email: string = profile.emails?.[0]?.value?.toLowerCase();
-    const hostedDomain: string = profile._json?.hd;
+    const hostedDomain = profile._json?.hd?.toLowerCase();
 
     // Chốt chặn nghiệp vụ: Chỉ cho phép tài khoản thuộc domain sinh viên AGU
     if (
-      hostedDomain !== 'student.agu.edu.vn' &&
+      hostedDomain !== 'student.agu.edu.vn' ||
       !email?.endsWith('@student.agu.edu.vn')
     ) {
       return done(
         new UnauthorizedException(
           'Chỉ cho phép tài khoản email sinh viên AGU (@student.agu.edu.vn) đăng nhập.',
+        ),
+        false,
+      );
+    }
+
+    const studentMaster = await this.prisma.studentMaster.findUnique({
+      where: { institutionalEmail: email },
+      select: { status: true },
+    });
+
+    if (studentMaster?.status === 'SUSPENDED') {
+      return done(
+        new ForbiddenException(
+          'Hồ sơ sinh viên đang trong trạng thái đình chỉ học tập, không thể đăng nhập.',
         ),
         false,
       );

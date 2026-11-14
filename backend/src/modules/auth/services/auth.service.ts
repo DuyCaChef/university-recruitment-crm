@@ -330,6 +330,12 @@ export class AuthService {
       );
     }
 
+    if (masterData.status === 'SUSPENDED') {
+      throw new ForbiddenException(
+        'Hồ sơ sinh viên đang trong trạng thái đình chỉ học tập, không thể đăng nhập.',
+      );
+    }
+
     // 2. Tra cứu tài khoản users kèm quan hệ roles và permissions
     let user = await this.prisma.user.findUnique({
       where: { email: googleUser.email },
@@ -355,7 +361,19 @@ export class AuthService {
       const dummyHashedPassword =
         await this.passwordService.hashPassword(randomPassword);
 
+      // Mở DB Transaction để đảm bảo tính toàn vẹn dữ liệu
       const newUserId = await this.prisma.$transaction(async (tx) => {
+        const currentMaster = await tx.studentMaster.findUnique({
+          where: { id: masterData.id },
+          select: { status: true },
+        });
+
+        if (currentMaster?.status === 'SUSPENDED') {
+          throw new ForbiddenException(
+            'Hồ sơ sinh viên đang trong trạng thái đình chỉ học tập, không thể đăng nhập.',
+          );
+        }
+
         const newUser = await tx.user.create({
           data: {
             email: googleUser.email,
