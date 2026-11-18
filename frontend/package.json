@@ -12,10 +12,12 @@
   "dependencies": {
     "@tanstack/react-query": "^5.104.5",
     "axios": "^1.20.0",
+    "class-variance-authority": "^0.7.1",
     "lucide-react": "^1.59.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-router-dom": "^7.18.4"
+    "react-router-dom": "^7.18.4",
+    "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

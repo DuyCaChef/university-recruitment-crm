@@ -1,0 +1,70 @@
+/* ============================================================
+   AGU CRM Global Styles — globals.css
+   Import tokens.css trước, sau đó @tailwind directives
+   ============================================================ */
+
+@import "./tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base reset & typography ─────────────────────── */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+    background-color: var(--c-canvas);
+    color: var(--c-ink);
+  }
+
+  body {
+    min-height: 100dvh;
+    padding-inline: max(0px, env(safe-area-inset-left, 0px));
+  }
+
+  /* ── Focus ring chuẩn ──────────────────── */
+  :focus-visible {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+
+  /* ── Tabular numbers cho số liệu ───────── */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Heading balance ───────────────────── */
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+
+  /* ── Scrollbar chuẩn ───────────────────── */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--c-subtle);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--c-line-strong);
+    border-radius: var(--radius-pill);
+  }
+}
+
+/* ── Reduced motion ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

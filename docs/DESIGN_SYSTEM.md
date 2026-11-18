@@ -1,7 +1,7 @@
 # DESIGN_SYSTEM.md
 Quy ước thiết kế và frontend cho hệ thống Web CRM Kết nối Sinh viên – Doanh nghiệp (Cổng Việc làm AGU).
 
-- **Phiên bản:** 1.0 (bản đề xuất, chờ duyệt các mục đánh dấu **[Chờ duyệt]**)
+- **Phiên bản:** 2.0.0 (chính thức, đồng bộ 100% với mã nguồn và kiến trúc hệ thống)
 - **Phạm vi:** toàn bộ giao diện React của 4 actor: Sinh viên, Doanh nghiệp, Cán bộ Career Center, Quản trị hệ thống.
 - **Nguyên tắc:** file này là nguồn duy nhất cho màu sắc, font, khoảng cách, bo góc, responsive và quy ước code. Không hard-code giá trị ngoài các token định nghĩa ở đây.
 
@@ -9,16 +9,28 @@ Quy ước thiết kế và frontend cho hệ thống Web CRM Kết nối Sinh v
 
 ## 1. Công nghệ nền tảng
 
-| Hạng mục | Lựa chọn | Ghi chú |
-| :-- | :-- | :-- |
-| UI framework | React 18+ với TypeScript (strict) | |
-| Styling | Tailwind CSS, màu lấy từ CSS variables | Xem mục 3.4 |
-| Routing | React Router | Lazy load theo route |
-| Dữ liệu từ server | TanStack Query | Mọi cache và trạng thái tải đi qua đây |
-| Form | React Hook Form + Zod | Schema Zod dùng chung cho validate |
-| Icon | Lucide React | **[Chờ duyệt]** |
-| Gộp class | `clsx` + `tailwind-merge` | Hàm `cn()` trong `shared/lib/cn.ts` |
-| Biến thể component | `class-variance-authority` (cva) | Dùng cho Button, Badge, Alert |
+**Phiên bản hệ thống: 2.0.0** — Cập nhật 18/11/2026
+
+| Hạng mục | Lựa chọn | Phiên bản | Ghi chú |
+| :-- | :-- | :-- | :-- |
+| UI framework | React + TypeScript (strict) | **React 19**, TS 5.x | Không dùng `React.FC`, không dùng `any` |
+| Build tool | Vite | 6.x | Path alias `@/*` → `src/*` |
+| Styling | Tailwind CSS v3 | **v3.x** (config JS) | Màu từ CSS variables — xem mục 3.4 |
+| Routing | React Router | v7.x | `React.lazy` + `<Suspense>` theo route |
+| Dữ liệu từ server | TanStack Query | v5.x | Mọi cache và trạng thái tải đi qua đây, không dùng `useEffect` để fetch |
+| Form | React Hook Form + Zod | v7.x + v3.x | Schema Zod dùng chung cho validate |
+| HTTP client | Axios | v1.x | Interceptor tự gắn Bearer token, bắt 401 toàn cục |
+| Icon | **Lucide React** | v0.4x+ | Đã chốt — không dùng thư viện icon khác |
+| Gộp class | `clsx` + `tailwind-merge` | — | Hàm `cn()` trong `shared/lib/cn.ts` |
+| Biến thể component | `class-variance-authority` (cva) | v0.7.x | Dùng cho Button, Badge, Alert, không viết điều kiện lồng nhau |
+
+### 1.1 Quy tắc cứng (không được vi phạm)
+- **KHÔNG** dùng `any` trong TypeScript.
+- **KHÔNG** dùng `React.FC` — tự khai báo kiểu trả về hoặc bỏ.
+- **KHÔNG** dùng `useEffect` để gọi API — chỉ dùng TanStack Query.
+- **KHÔNG** dùng màu hex hard-code trong JSX — chỉ dùng class ngữ nghĩa từ token.
+- **KHÔNG** dùng prefix `lg:` của Tailwind — chỉ dùng `md:` (768px) và `desktop:` (1025px).
+- **KHÔNG** dùng `index` của mảng làm `key` cho danh sách có thể thay đổi thứ tự.
 
 ---
 
@@ -392,12 +404,26 @@ Mọi component nằm trong `src/components/ui/` và chỉ dùng token của m�
 
 ### 7.1 Các layout chính
 
-| Layout | Dùng cho | Thành phần |
-| :-- | :-- | :-- |
-| `AuthLayout` | Đăng nhập, đổi mật khẩu lần đầu, đăng ký doanh nghiệp | Không có sidebar, form căn giữa, khung giới thiệu bên trái trên desktop |
-| `AppLayout` | Các trang sau đăng nhập | Sidebar (desktop), rail (tablet), thanh dưới (mobile), header trang |
-| `PublicLayout` | Cổng việc làm công khai, trang chủ | Header nổi, footer |
-| `FocusLayout` | Đổi mật khẩu bắt buộc, chờ duyệt | Tối giản, một nút thoát |
+| Layout | File | Dùng cho | Vai trò áp dụng | Thành phần |
+| :-- | :-- | :-- | :-- | :-- |
+| `AuthLayout` | `src/layouts/AuthLayout.tsx` | Đăng nhập, đăng ký doanh nghiệp | Tất cả (trang công khai) | Header logo, form card căn giữa (max-w-md, radius-panel), footer |
+| `AppLayout` | `src/layouts/AppLayout.tsx` | Các trang sau đăng nhập | STUDENT, EMPLOYER, CAREER_CENTER, SYSTEM_ADMIN | Menu động theo role; Sidebar 256px (desktop), Rail 72px (tablet), Bottom-nav (mobile) |
+| `PublicLayout` | `src/layouts/PublicLayout.tsx` | Cổng việc làm công khai | Khách (chưa đăng nhập) | Header nổi backdrop-blur, footer 2 cột |
+| `FocusLayout` | `src/layouts/FocusLayout.tsx` | Đổi mật khẩu bắt buộc, chờ duyệt | **Chỉ** EMPLOYER, CAREER_CENTER, SYSTEM_ADMIN | Logo căn giữa, card nhỏ (max-w-sm), 1 nút Đăng xuất |
+
+> [!IMPORTANT]
+> **STUDENT KHÔNG bao giờ hiển thị FocusLayout.** Sinh viên đăng nhập qua Google SSO với
+> JIT Provisioning — `must_change_password` luôn là `false` và không có bước đổi mật khẩu
+> lần đầu. `FocusLayout` và màn hình đổi mật khẩu chỉ áp dụng cho EMPLOYER,
+> CAREER_CENTER, SYSTEM_ADMIN được cấp mật khẩu tạm ban đầu.
+
+#### Responsive của AppLayout (3 mốc)
+
+| Mốc | Điều kiện | Điều hướng | Chi tiết |
+| :-- | :-- | :-- | :-- |
+| Mobile | `< 768px` | Bottom-nav cố định (`fixed bottom-0`) | Tối đa 4 mục `primary` + nút "Thêm" mở Drawer; Header gọn 56px với tiêu đề trang |
+| Tablet | `768px – 1024px` (`md:`) | Rail icon 72px bên trái (`w-[72px]`) | Icon-only, hover tooltip hiện nhãn |
+| Desktop | `> 1024px` (`desktop:`) | Sidebar 256px (`w-64`) bên trái | Nút thu gọn về 72px; Header 64px |
 
 ### 7.2 Header trang
 - Thành phần: tiêu đề `h1`, breadcrumb (nếu sâu hơn 2 cấp), khu hành động bên phải.
@@ -569,14 +595,25 @@ Lưu ý: `SYSTEM_ADMIN` không có quyền truy cập màn CRM và ghi chú nộ
 
 ### 10.3 Trạng thái tài khoản đặc biệt
 
-| Trạng thái | Giao diện |
-| :-- | :-- |
-| `must_change_password = TRUE` | Chỉ hiển thị `FocusLayout` với form đổi mật khẩu. Mọi điều hướng khác bị khóa. |
-| `PASSWORD_CHANGE_REQUIRED` từ API | Chuyển sang màn đổi mật khẩu, không hiện thông báo lỗi. |
-| `ACCOUNT_LOCKED` | Màn thông báo khóa, hướng dẫn liên hệ Career Center. Không có form đăng nhập. |
-| Doanh nghiệp `PENDING` | Vào được trang, nhưng các mục đăng tin và xem ứng viên hiển thị ở trạng thái khóa kèm dải thông báo "Hồ sơ đang chờ thẩm định". |
-| Doanh nghiệp `REJECTED` | Dải thông báo kèm lý do từ chối và nút "Gửi lại hồ sơ". |
-| Sinh viên `GRADUATED` hoặc `SUSPENDED` | Thông báo trạng thái ở đầu trang. Quyền ứng tuyển theo chính sách từ backend. |
+> [!IMPORTANT]
+> **Quy tắc phân tách STUDENT vs non-STUDENT:**
+> - **STUDENT** đăng nhập **chỉ qua Google SSO** (`@student.agu.edu.vn`). Backend thực hiện
+>   **JIT (Just-In-Time) Provisioning** — tạo hoặc cập nhật tài khoản tự động tại
+>   `/api/v1/auth/google` → redirect `/auth/callback?token=<access_token>` → frontend lưu
+>   token và chuyển về `/student/jobs`. Sinh viên **không có** bước đổi mật khẩu, không có
+>   `must_change_password = true`, không nhận mã lỗi `PASSWORD_CHANGE_REQUIRED`.
+> - **EMPLOYER / CAREER_CENTER / SYSTEM_ADMIN** đăng nhập bằng mật khẩu nội bộ. Lần đầu
+>   được cấp mật khẩu tạm → `must_change_password = true` → chuyển sang `FocusLayout`.
+
+| Trạng thái | Áp dụng cho | Giao diện |
+| :-- | :-- | :-- |
+| Luồng Google SSO (STUDENT) | **Chỉ STUDENT** | `/api/v1/auth/google` → Google OAuth → `/auth/callback?token=...` → lưu `access_token` → `/student/jobs`. Không hiện màn đổi MK. |
+| `must_change_password = true` | **Chỉ** EMPLOYER, CAREER_CENTER, SYSTEM_ADMIN | Chỉ hiển thị `FocusLayout` với form đổi mật khẩu. Mọi điều hướng khác bị chặn tại router. |
+| Mã lỗi `PASSWORD_CHANGE_REQUIRED` từ API | **Chỉ** EMPLOYER, CAREER_CENTER, SYSTEM_ADMIN | Interceptor Axios bắt mã, chuyển hướng về `/change-password` (FocusLayout), không hiện toast lỗi. |
+| `ACCOUNT_LOCKED` | Tất cả (trừ STUDENT SSO tự xử lý ở backend) | Màn thông báo khóa, hướng dẫn liên hệ Career Center. Không có form đăng nhập. |
+| Doanh nghiệp `PENDING` | EMPLOYER | Vào được trang, nhưng đăng tin và xem ứng viên hiển thị khóa kèm `Banner` warning "Hồ sơ đang chờ thẩm định". |
+| Doanh nghiệp `REJECTED` | EMPLOYER | `Banner` danger kèm lý do từ chối và nút "Gửi lại hồ sơ". |
+| Sinh viên `GRADUATED` hoặc `SUSPENDED` | STUDENT | `Banner` info/warning đầu trang. Quyền ứng tuyển theo chính sách backend. |
 
 ### 10.4 Dữ liệu hiển thị theo vai trò
 - **Sinh viên**: không thấy số điện thoại, bảng điểm hay CCCD của người khác.
@@ -629,15 +666,23 @@ Dải thông báo đầu trang dùng component `Banner` với các biến thể 
 
 ---
 
-## 14. Các mục cần chốt trước khi triển khai
+## 14. Các mục đã chốt (v2.0.0)
 
-1. **Breakpoint**: đã chốt theo mục 5.1. Xác nhận có dùng `desktop:` (từ 1025px) hay đổi thành `xl:` mặc định.
-2. **Icon**: Lucide React hay thư viện khác.
-3. **Theme tối**: bảng ở mục 3.5 là đề xuất, cần duyệt.
-4. **Màu trạng thái và semantic**: đề xuất ở mục 3.6 và 3.7, cần duyệt.
-5. **Tailwind**: phiên bản 3 (config JS, như ví dụ mục 3.4) hay 4 (cấu hình trong CSS). Ví dụ trong file theo phiên bản 3.
-6. **Ngôn ngữ**: chỉ tiếng Việt hay chuẩn bị song ngữ.
-7. **Bảng màu cuối**: phần "Bảng màu chi tiết" trong ảnh gốc có thể có thêm bậc màu. Khi anh gửi bản chính thức, mình sẽ đối chiếu lại các token.
+> [!NOTE]
+> Tất cả mục dưới đây đã được **chốt** trong phiên bản 2.0.0 (18/11/2026).
+> Không còn trạng thái **[Chờ duyệt]** nào trong tài liệu này.
+
+| Mục | Quyết định | Ghi chú |
+| :-- | :-- | :-- |
+| **Breakpoint** | `md: 768px` và `desktop: 1025px` | **Không dùng** `lg:` mặc định của Tailwind (1024px). Cấu hình trong `tailwind.config.js > screens`. |
+| **Icon** | **Lucide React** (`lucide-react`) | Đã cài, dùng thống nhất toàn dự án. Không thêm thư viện icon khác. |
+| **Theme tối** | Áp dụng qua `data-theme="dark"` trên `<html>` | Bảng token dark ở mục 3.5 đã chốt. Nút toggle trong AppLayout. Không dùng class `dark:` của Tailwind. |
+| **Màu trạng thái & semantic** | Đã chốt theo mục 3.6 và 3.7 | Tokens khai báo trong `src/styles/tokens.css`, map vào Tailwind qua `tailwind.config.js`. |
+| **Tailwind** | **Phiên bản 3** (config JS `tailwind.config.js`) | Không nâng lên v4. Giữ cú pháp `theme.extend.colors` và `screens`. |
+| **Ngôn ngữ giao diện** | **Tiếng Việt** duy nhất | Không chuẩn bị i18n đa ngôn ngữ trong scope hiện tại. Mọi chuỗi UI bằng tiếng Việt có dấu. |
+| **Auth STUDENT** | Google SSO + JIT Provisioning | STUDENT không dùng mật khẩu, không có `must_change_password`. Xem mục 10.3. |
+| **Auth non-STUDENT** | Mật khẩu nội bộ + `must_change_password` → FocusLayout | Áp dụng cho EMPLOYER, CAREER_CENTER, SYSTEM_ADMIN. Xem mục 10.3. |
+| **CVA** | `class-variance-authority` đã cài | Dùng cho Button, Badge, Alert, Banner. Không viết điều kiện lồng nhau trong JSX. |
 
 ---
 
@@ -645,4 +690,5 @@ Dải thông báo đầu trang dùng component `Banner` với các biến thể 
 
 | Phiên bản | Ngày | Nội dung |
 | :-- | :-- | :-- |
+| 2.0.0 | 18/11/2026 | Refactor toàn bộ frontend sang kiến trúc feature-based. Thêm `cva`, cập nhật Tailwind config với design tokens đầy đủ (tokens.css), gộp 3 layout thành AppLayout responsive 3 mốc, chốt Google SSO + JIT cho STUDENT, cập nhật mục 1/7.1/10.3/14. |
 | 1.0 | 17/11/2026 | Khởi tạo bản đề xuất: chủ đạo `#1D4E5F`, nhóm đất nung, font Be Vietnam Pro và JetBrains Mono, responsive 3 mốc, theme sáng và tối, quy ước React và Role-Based UI |
