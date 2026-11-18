@@ -192,68 +192,104 @@ university-recruitment-crm/
 │           ├── event/                                # Module 13: Quản lý sự kiện nghề nghiệp, Workshop, Job Fair và điểm danh
 │           └── audit-log/                            # Module 15: Ghi vết kiểm toán hệ thống (Audit Trail) loại trừ dữ liệu nhạy cảm
 │
-├── frontend/                                         # PHÂN HỆ FRONTEND — SPA HIỆN ĐẠI (REACT 18 + VITE + TAILWIND CSS)
-│   ├── package.json                                  # Quản lý dependencies UI: React, Vite, TanStack Query, Tailwind, Lucide
-│   ├── tsconfig.json                                 # Cấu hình TypeScript compiler cho React JSX/TSX
-│   ├── vite.config.ts                                # Cấu hình Vite bundler: Plugins, Aliases (@/*), Proxy Dev Server
-│   ├── tailwind.config.js                            # Thiết lập Design System: Bảng màu AGU, Typography, Spacing, Breakpoints
-│   ├── postcss.config.js                             # Cấu hình PostCSS nạp Tailwind CSS và Autoprefixer
-│   ├── index.html                                    # Tệp HTML gốc nạp thẻ Meta SEO, Google Fonts và Root Element
-│   ├── public/                                       # Tài nguyên tĩnh công khai không qua Bundler (Logo AGU, Favicon)
-│   └── src/                                          # MÃ NGUỒN CHÍNH THỨC CỦA GIAO DIỆN CLIENT
-│       ├── main.tsx                                  # Điểm gắn kết React DOM vào index.html, nạp CSS toàn cục
-│       ├── app/                                      # CẤU TRÚC ĐIỀU HƯỚNG VÀ NHÀ CUNG CẤP NGỮ CẢNH TOÀN CỤC
-│       │   ├── App.tsx                               # Thành phần gốc kết nối Layout và Router
-│       │   ├── routes.tsx                            # Cấu hình định tuyến: Public, Role-Protected Routes (Guarded by Role)
-│       │   └── provider.tsx                          # Tổng hợp Providers: QueryClientProvider, AuthProvider, ToastProvider
-│       │
-│       ├── components/                               # THÀNH PHẦN GIAO DIỆN TÁI SỬ DỤNG (REUSABLE UI COMPONENTS)
-│       │   ├── ui/                                   # Các phần tử cơ bản: Button, Input, Modal, Badge, Dropdown, Table
-│       │   ├── layout/                               # Khung bố cục chuẩn: Header, Sidebar, Navbar, Footer, DashboardLayout
-│       │   └── feedback/                             # Trạng thái phản hồi: SkeletonLoader, EmptyState, ErrorBoundary, Alert
-│       │
-│       ├── features/                                 # CÁC TÍNH NĂNG NGHIỆP VỤ THEO PHÂN HỆ (FEATURE-SLICED DESIGN)
-│       │   │                                         # Mỗi feature gồm: /components, /hooks, /services (API call), /types
-│       │   ├── auth/                                 # Giao diện Đăng nhập, Đăng ký theo vai trò, Quên/Đổi mật khẩu
-│       │   ├── students/                             # Màn hình quản lý Career Profile, danh mục kỹ năng, tải lên CV PDF
-│       │   ├── companies/                            # Màn hình hồ sơ công ty, danh bạ liên hệ, gửi duyệt pháp nhân
-│       │   ├── jobs/                                 # Danh sách việc làm, bộ lọc đa tiêu chí, chi tiết tin tuyển dụng
-│       │   ├── applications/                         # Giao diện nộp đơn ứng tuyển, xem lại CV Snapshot, lịch sử xét duyệt
-│       │   ├── recruitment/                          # Bảng điều phối Kanban kéo thả quản lý ứng viên theo từng Job
-│       │   ├── interviews/                           # Lịch phỏng vấn trực quan, form đánh giá năng lực ứng viên
-│       │   ├── crm/                                  # Màn hình làm việc Company 360°, nhật ký trao đổi, nhiệm vụ Follow-up
-│       │   ├── notifications/                        # Trung tâm thông báo In-app, thông báo đẩy và chuông cảnh báo
-│       │   └── reports/                              # Bảng điều khiển KPI điều hành của Career Center, biểu đồ thống kê
-│       │
-│       ├── services/                                 # TẦNG KẾT NỐI API VÀ XỬ LÝ TRUYỀN DẪN DỮ LIỆU
-│       │   ├── api/                                  # Cấu hình Axios Client
-│       │   │   ├── axiosClient.ts                    # Instance Axios: Tự động đính kèm JWT Bearer, xử lý Refresh/401
-│       │   │   └── endpoints.ts                      # Tập trung toàn bộ hằng số đường dẫn API (REST Endpoints)
-│       │   └── storage/                              # Helper tương tác tệp: Tải xuống CV Snapshot, xem trước PDF
-│       │
-│       ├── hooks/                                    # CUSTOM REACT HOOKS DÙNG CHUNG
-│       │   ├── useAuth.ts                            # Hook truy cập phiên người dùng, kiểm tra phân quyền RBAC tức thì
-│       │   ├── useDebounce.ts                        # Hook tối ưu hóa hiệu năng tìm kiếm thời gian thực
-│       │   └── usePagination.ts                      # Hook đồng bộ phân trang dữ liệu với URL Search Params
-│       │
-│       ├── types/                                    # ĐỊNH NGHĨA KIỂU DỮ LIỆU TOÀN CỤC (GLOBAL TYPESCRIPT DEFINITIONS)
-│       │   ├── user.types.ts                         # Kiểu dữ liệu thực thể User, Roles, Permissions
-│       │   ├── student.types.ts                      # Kiểu dữ liệu Career Profile, Skill, Academic Info
-│       │   ├── company.types.ts                      # Kiểu dữ liệu Company, Verification Status, Relationship Status
-│       │   ├── job.types.ts                          # Kiểu dữ liệu Job Posting, Requirements, Job Status
-│       │   ├── application.types.ts                  # Kiểu dữ liệu Application, Kanban Stages, Status Histories
-│       │   └── crm.types.ts                          # Kiểu dữ liệu Interaction Log, Follow-up Task, Company 360 View
-│       │
-│       ├── utils/                                    # THƯ VIỆN HÀM TIỆN ÍCH TRỢ GIÚP
-│       │   ├── formatters.ts                         # Định dạng ngày giờ chuẩn Việt Nam, tiền tệ VND, dung lượng tệp
-│       │   └── validators.ts                         # Hàm kiểm tra định dạng email sinh viên (@agu.edu.vn), MST, SĐT
-│       │
-│       ├── constants/                                # DANH MỤC HẰNG SỐ TOÀN CỤC PHÍA CLIENT
-│       │   ├── roles.ts                              # Khai báo các hằng số vai trò (STUDENT, EMPLOYER, CAREER_CENTER, ADMIN)
-│       │   └── routes.ts                             # Khai báo cấu trúc đường dẫn điều hướng URL của hệ thống
-│       │
-│       └── styles/                                   # ĐỊNH KIỂU TOÀN CỤC VÀ DESIGN TOKENS
-│           └── index.css                             # Nhập Tailwind Directives (@tailwind base, components, utilities)
+├── frontend/                                         # PHÂN HỆ FRONTEND — SPA REACT 19 + VITE 8 + TYPESCRIPT + TAILWIND CSS
+│   ├── .env                                          # Biến môi trường triển khai cục bộ (không commit)
+│   ├── .env.example                                  # Mẫu biến môi trường dùng để cấu hình API và ứng dụng
+│   ├── .gitignore                                    # Quy tắc bỏ qua build output, node_modules và tệp nhạy cảm
+│   ├── package.json                                  # Khai báo dependencies và scripts dev/build/lint/preview
+│   ├── package-lock.json                             # Khóa phiên bản dependency để cài đặt NPM nhất quán
+│   ├── eslint.config.js                              # Cấu hình ESLint cho mã TypeScript/React
+│   ├── tsconfig.json                                 # Cấu hình tham chiếu TypeScript tổng
+│   ├── tsconfig.app.json                             # Cấu hình TypeScript cho mã nguồn React trong src/
+│   ├── tsconfig.node.json                            # Cấu hình TypeScript cho tệp cấu hình chạy trên Node
+│   ├── vite.config.ts                                # Cấu hình Vite, React plugin và alias "@/*" trỏ tới src/
+│   ├── tailwind.config.js                            # Thiết lập font, breakpoint, bảng màu và design tokens cho Tailwind
+│   ├── postcss.config.js                             # Cấu hình PostCSS tải Tailwind và Autoprefixer
+│   ├── index.html                                    # HTML entry, mount root React và nạp metadata ứng dụng
+│   ├── public/                                       # Tài nguyên tĩnh được Vite phục vụ trực tiếp
+│   │   ├── favicon.svg                               # Favicon của ứng dụng
+│   │   └── icons.svg                                 # Bộ icon SVG công khai
+│   ├── dist/                                         # Kết quả build sản phẩm do Vite sinh ra (artifact)
+│   ├── node_modules/                                 # Dependency cài bằng NPM (không quản lý trong Git)
+│   ├── README.md                                     # Tài liệu khởi tạo mẫu và hướng dẫn ESLint của frontend
+│   └── src/                                          # Mã nguồn chính của giao diện người dùng
+│       ├── main.tsx                                  # Điểm khởi chạy React, mount App và nạp providers/CSS toàn cục
+│       ├── App.tsx                                   # Thành phần gốc: hiện AppRouter
+│       ├── app/                                      # Cấu hình ứng dụng cấp cao
+│       │   ├── providers.tsx                         # Khởi tạo QueryClientProvider và cấu hình React Query
+│       │   └── router.tsx                            # Khai báo route, layout theo vai trò và lazy loading trang
+│       ├── assets/                                   # Hình ảnh và asset được import trực tiếp trong mã nguồn
+│       │   ├── hero.png                              # Hình hero dùng trong giao diện
+│       │   ├── react.svg                             # Asset minh họa React
+│       │   └── vite.svg                              # Asset minh họa Vite
+│       ├── components/                               # Thành phần UI và khối giao diện dùng lại
+│       │   ├── forms/                                # Nơi dự kiến/đang phát triển các form tái sử dụng
+│       │   ├── tables/                               # Nơi dự kiến/đang phát triển các bảng dữ liệu tái sử dụng
+│       │   └── ui/                                   # Bộ component cơ bản theo Design System
+│       │       ├── Alert.tsx                         # Hiển thị trạng thái cảnh báo/thông báo
+│       │       ├── Badge.tsx                         # Nhãn trạng thái và danh mục
+│       │       ├── Banner.tsx                        # Khối banner nổi bật hoặc cảnh báo toàn trang
+│       │       ├── Button.tsx                        # Nút hành động với các biến thể giao diện
+│       │       ├── index.ts                          # Export tập trung các UI component
+│       │       └── variants.ts                       # Variant style dùng chung cho component
+│       ├── features/                                 # Các chức năng nghiệp vụ được tổ chức theo feature
+│       │   ├── applications/                         # Nghiệp vụ hồ sơ ứng tuyển (đang phát triển)
+│       │   ├── audit/                                # Giao diện và page nghiệp vụ nhật ký kiểm toán
+│       │   │   └── pages/                           # Các trang nhật ký kiểm toán
+│       │   ├── auth/                                 # Xác thực, đăng nhập và Google SSO callback
+│       │   │   ├── api/
+│       │   │   │   └── authApi.ts                   # Gọi API đăng nhập, callback và phiên xác thực
+│       │   │   ├── pages/
+│       │   │   │   ├── AuthCallbackPage.tsx         # Trang xử lý kết quả đăng nhập Google SSO
+│       │   │   │   └── LoginPage.tsx                # Trang đăng nhập/đăng ký
+│       │   │   └── types.ts                         # Kiểu dữ liệu đầu vào và phản hồi xác thực
+│       │   ├── companies/                            # Nghiệp vụ hồ sơ doanh nghiệp (đang phát triển)
+│       │   ├── crm/                                  # CRM quan hệ, theo dõi đối tác và công việc Career Center
+│       │   │   └── pages/
+│       │   │       └── CareerCenterCrmPage.tsx      # Trang CRM Career Center
+│       │   ├── dashboard/                            # Các trang dashboard theo vai trò (đang phát triển)
+│       │   │   └── pages/                           # Trang dashboard nghiệp vụ
+│       │   ├── interviews/                           # Quản lý lịch và kết quả phỏng vấn (đang phát triển)
+│       │   ├── jobs/                                 # Danh mục và chi tiết tin tuyển dụng (đang phát triển)
+│       │   ├── notifications/                        # Trung tâm thông báo người dùng (đang phát triển)
+│       │   ├── pipeline/                             # Phễu tuyển dụng dành cho doanh nghiệp
+│       │   │   └── pages/
+│       │   │       └── EmployerPipelinePage.tsx     # Trang pipeline/tin tuyển dụng/phỏng vấn của Employer
+│       │   ├── recruitment/                          # Quản lý quy trình tuyển dụng (đang phát triển)
+│       │   ├── reports/                              # Báo cáo và thống kê Career Center (đang phát triển)
+│       │   └── students/                            # Giao diện sinh viên
+│       │       └── pages/
+│       │           └── StudentJobsPage.tsx          # Trang việc làm và các route sinh viên đang dùng chung trang này
+│       ├── layouts/                                 # Khung giao diện theo ngữ cảnh truy cập
+│       │   ├── AppLayout.tsx                        # Layout đăng nhập, có sidebar/topbar theo role
+│       │   ├── AuthLayout.tsx                       # Layout cho trang đăng nhập/đăng ký
+│       │   ├── FocusLayout.tsx                      # Layout thu gọn cho luồng bắt buộc như đổi mật khẩu
+│       │   ├── PublicLayout.tsx                     # Layout cho nội dung công khai
+│       │   └── index.ts                             # Export tập trung các layout
+│       ├── pages/                                    # Trang hệ thống không thuộc một feature cụ thể
+│       │   └── NotFoundPage.tsx                     # Trang 404 và liên kết quay lại
+│       ├── shared/                                   # Mã dùng chung giữa nhiều feature
+│       │   ├── api/
+│       │   │   ├── axiosClient.ts                   # Axios instance cấu hình base URL và interceptor
+│       │   │   └── healthService.ts                 # Kiểm tra trạng thái kết nối backend
+│       │   ├── constants/
+│       │   │   ├── errors.ts                        # Hằng số và thông điệp lỗi chung
+│       │   │   ├── navigation.ts                    # Cấu trúc điều hướng theo vai trò
+│       │   │   └── statusBadges.ts                  # Mapping trạng thái sang badge giao diện
+│       │   ├── hooks/
+│       │   │   ├── useDebounce.ts                   # Trì hoãn cập nhật giá trị đầu vào
+│       │   │   ├── useMediaQuery.ts                 # Theo dõi breakpoint/màn hình hiện tại
+│       │   │   └── usePermission.ts                 # Kiểm tra quyền hiển thị theo vai trò
+│       │   ├── lib/
+│       │   │   ├── cn.ts                            # Gộp className Tailwind an toàn
+│       │   │   ├── formatCurrency.ts                # Định dạng số tiền VND
+│       │   │   └── formatDate.ts                    # Định dạng ngày giờ hiển thị
+│       │   └── types/
+│       │       └── common.types.ts                  # Kiểu dữ liệu chung cho API và giao diện
+│       ├── styles/                                   # Design System và CSS toàn cục
+│       │   ├── globals.css                           # CSS cơ sở, Tailwind directives và style dùng chung
+│       │   └── tokens.css                           # Màu sắc, khoảng cách, radius và shadow dưới dạng CSS variables
+│       └── types/                                    # Không gian cho kiểu TypeScript mở rộng cấp src (đang phát triển)
 │
 └── docs/                                             # HỒ SƠ TÀI LIỆU KỸ THUẬT & NGHIỆP VỤ HOÀN CHỈNH CỦA KHÓA LUẬN
     ├── Scope_Project_WebCRM.md                       # Tài liệu đặc tả phạm vi dự án chính thức (Scope Specification v1.2)
