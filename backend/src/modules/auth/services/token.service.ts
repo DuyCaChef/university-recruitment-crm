@@ -39,6 +39,17 @@ export class TokenService {
     });
   }
 
+  /*
+   * Giải mã và xác thực chữ ký + thời hạn của Refresh Token
+   */
+  async verifyRefreshToken(token: string): Promise<JwtRefreshPayload> {
+    return this.jwtService.verifyAsync<JwtRefreshPayload>(token, {
+      secret:
+        process.env.JWT_REFRESH_SECRET ||
+        'super_secret_jwt_refresh_key_agu_crm_2026',
+    });
+  }
+
   /**
    * Đính kèm Refresh Token vào HttpOnly Cookie của HTTP Response
    * Bảo đảm các cờ an toàn: httpOnly, sameSite, secure, maxAge

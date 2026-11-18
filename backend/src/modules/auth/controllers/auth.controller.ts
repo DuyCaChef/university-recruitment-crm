@@ -16,7 +16,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
-import type { Response } from 'express';
+import type { Response, Request } from 'express';
 import { AuthService } from '../services/auth.service';
 import { LoginDto } from '../dto/login.dto';
 import { ChangePasswordDto } from '../dto/change-password.dto';
@@ -30,6 +30,42 @@ import { RegisterStudentDto } from '../dto/register-student.dto';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  // ===========================================================================
+  // 0. ENDPOINT LÀM MỚI ACCESS TOKEN BẰNG REFRESH TOKEN (PUBLIC - KHÔNG YÊU CẦU TOKEN)
+  // ===========================================================================
+  @Public() // Bỏ qua JwtAuthGuard vì Access Token lúc này đã hết hạn
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Làm mới Access Token bằng HttpOnly Refresh Cookie',
+    description:
+      'Đọc cookie refreshToken từ trình duyệt, kiểm tra hiệu lực, thực hiện Refresh Token Rotation và cấp phát Access Token mới.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Cấp phát Access Token mới thành công.',
+  })
+  @ApiResponse({
+    status: 401,
+    description:
+      'Thiếu cookie refreshToken, chữ ký sai hoặc token đã hết hạn 7 ngày.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Tài khoản đã bị khóa (LOCKED) hoặc ngừng hoạt động (INACTIVE).',
+  })
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // Đọc cookie refreshToken từ request
+    const cookies = req.cookies as
+      Record<string, string | undefined> | undefined;
+    const refreshToken = cookies?.refreshToken;
+    return this.authService.refreshTokens(refreshToken, res);
+  }
 
   // ===========================================================================
   // 1. ENDPOINT ĐĂNG NHẬP (PUBLIC - KHÔNG YÊU CẦU TOKEN)

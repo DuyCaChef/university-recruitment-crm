@@ -128,6 +128,101 @@ export class AuthService {
   }
 
   /**
+   * Tái cấp phát Access Token mới từ HttpOnly Refresh Cookie & Xoay vòng Refresh Token (Rotation)
+   */
+  async refreshTokens(refreshToken: string | undefined, res: Response) {
+    // 1. Kiểm tra sự tồn tại của cookie refreshToken
+    if (!refreshToken) {
+      this.tokenService.clearRefreshTokenCookie(res);
+      throw new UnauthorizedException(
+        'Không tìm thấy Refresh Token. Vui lòng đăng nhập lại.',
+      );
+    }
+
+    // 2. Xác thực chữ ký số và thời hạn của Refresh Token
+    let payload: { sub: string };
+    try {
+      payload = await this.tokenService.verifyRefreshToken(refreshToken);
+    } catch {
+      this.tokenService.clearRefreshTokenCookie(res);
+      throw new UnauthorizedException(
+        'Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.',
+      );
+    }
+
+    // 3. Truy vấn thông tin người dùng và danh sách Roles/Permissions mới nhất từ CSDL
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      include: {
+        userRoles: {
+          include: {
+            role: {
+              include: {
+                rolePermissions: {
+                  include: { permission: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      this.tokenService.clearRefreshTokenCookie(res);
+      throw new UnauthorizedException('Tài khoản không tồn tại.');
+    }
+
+    // 4. Kiểm tra trạng thái tài khoản (Chặn ngay nếu tài khoản bị khóa/ngừng hoạt động giữa chừng)
+    if (user.status === 'LOCKED') {
+      this.tokenService.clearRefreshTokenCookie(res);
+      throw new ForbiddenException(
+        'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Career Center.',
+      );
+    }
+    if (user.status !== 'ACTIVE') {
+      this.tokenService.clearRefreshTokenCookie(res);
+      throw new ForbiddenException('Tài khoản hiện không còn hoạt động.');
+    }
+
+    // 5. Tổng hợp lại danh sách Role và Permission mới nhất (Flat list)
+    const roles: string[] = [];
+    const permissionsSet = new Set<string>();
+
+    for (const ur of user.userRoles) {
+      roles.push(ur.role.code);
+      for (const rp of ur.role.rolePermissions) {
+        permissionsSet.add(rp.permission.code);
+      }
+    }
+    const permissions = Array.from(permissionsSet);
+
+    // 6. Cấp phát Access Token mới và xoay vòng Refresh Token mới (Refresh Token Rotation)
+    const newAccessToken = await this.tokenService.generateAccessToken({
+      sub: user.id,
+      email: user.email,
+      roles,
+      permissions,
+      mustChangePassword: user.mustChangePassword,
+    });
+
+    const newRefreshToken = await this.tokenService.generateRefreshToken({
+      sub: user.id,
+    });
+
+    this.tokenService.setRefreshTokenCookie(res, newRefreshToken);
+
+    // 7. Trả về đúng định dạng chuẩn của hệ thống
+    return {
+      statusCode: 200,
+      message: 'Làm mới phiên đăng nhập thành công.',
+      data: {
+        accessToken: newAccessToken,
+      },
+    };
+  }
+
+  /**
    * Hàm xử lý đăng xuất: Xóa Refresh Token Cookie và thu hồi phiên làm việc
    */
   async logout(res: Response) {
