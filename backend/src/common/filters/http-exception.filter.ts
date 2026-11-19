@@ -26,6 +26,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     // Trích xuất thông điệp chi tiết từ exception
     let message: any = 'Lỗi máy chủ nội bộ (Internal Server Error)';
     let errorName = 'InternalServerError';
+    let errorCode: string | undefined;
 
     if (exception instanceof HttpException) {
       const res = exception.getResponse();
@@ -35,6 +36,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
         const resObj = res as Record<string, any>;
         message = resObj.message || exception.message;
         errorName = resObj.error || exception.name;
+        errorCode =
+          typeof resObj.errorCode === 'string' ? resObj.errorCode : undefined;
       }
     } else if (exception instanceof Error) {
       message = exception.message;
@@ -48,6 +51,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       statusCode: status,
       message: message,
       error: errorName,
+      ...(errorCode ? { errorCode } : {}),
       timestamp: new Date().toISOString(),
       path: request.url,
     };

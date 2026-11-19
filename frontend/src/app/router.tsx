@@ -32,7 +32,7 @@ export function AppRouter() {
           {/* Auth routes — AuthLayout */}
           <Route element={<AuthLayout />}>
             <Route path="/login"    element={<LoginPage />} />
-            <Route path="/register" element={<LoginPage />} />
+            <Route path="/register" element={<Navigate to="/login" replace />} />
           </Route>
 
           {/* Google SSO callback — độc lập, không layout */}

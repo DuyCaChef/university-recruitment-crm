@@ -1,92 +1,53 @@
-import { Link } from "react-router-dom";
-import { GraduationCap, Building2, Shield } from "lucide-react";
-import { cn } from "@/shared/lib/cn";
+// src/features/auth/pages/LoginPage.tsx
+import { useState, type ReactElement } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { AlertCircle } from 'lucide-react';
+import { ERROR_MESSAGES } from '@/shared/constants/errors';
+import { AguSsoButton } from '../components/AguSsoButton';
+import { CredentialsLoginForm } from '../components/CredentialsLoginForm';
+import { ForgotPasswordModal } from '../components/ForgotPasswordModal';
 
-/**
- * LoginPage — Trang đăng nhập / chọn vai trò.
- * STUDENT: Google SSO (@student.agu.edu.vn) — JIT Provisioning tại backend.
- * EMPLOYER/CAREER_CENTER/SYSTEM_ADMIN: đăng nhập mật khẩu nội bộ.
- */
-export default function LoginPage() {
-  const googleLoginUrl =
-    (import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1") +
-    "/auth/google";
+export const LoginPage = (): ReactElement => {
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState<boolean>(false);
+  const [searchParams] = useSearchParams();
+
+  // Bắt mã lỗi trả về trên URL nếu Google SSO bị từ chối (ví dụ: dùng @gmail.com cá nhân)
+  const ssoErrorCode = searchParams.get('error');
+  const ssoErrorMessage = ssoErrorCode
+    ? (ERROR_MESSAGES[ssoErrorCode] ?? ERROR_MESSAGES.SSO_DOMAIN_FORBIDDEN)
+    : null;
 
   return (
-    <div className="space-y-6">
-      {/* Tiêu đề */}
-      <div className="text-center">
-        <h1 className="text-h2 font-bold text-ink">Đăng nhập</h1>
-        <p className="mt-1 text-sm text-ink-2">
-          Chọn phương thức đăng nhập phù hợp với vai trò của bạn
-        </p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <h1 className="sr-only">Đăng nhập Cổng Việc làm Trường Đại học An Giang</h1>
 
-      {/* Phân vùng Sinh viên */}
-      <section>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-ink-3">
-          Sinh viên AGU
-        </p>
-        <a
-          href={googleLoginUrl}
-          className={cn(
-            "flex w-full items-center justify-center gap-3 rounded-button",
-            "bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-sm",
-            "hover:bg-brand-700 transition-colors duration-150",
-            "focus-visible:outline-2 focus-visible:outline-focus",
-          )}
+      {/* Thông báo lỗi nếu luồng Google SSO redirect về kèm mã lỗi */}
+      {ssoErrorMessage && (
+        <div
+          role="alert"
+          className="rounded-input border border-danger bg-clay-100 p-3.5 text-small text-clay-ink flex items-start gap-2.5"
         >
-          <GraduationCap className="h-5 w-5" aria-hidden="true" />
-          Đăng nhập bằng Google AGU
-          <span className="text-xs opacity-80 font-normal">(@student.agu.edu.vn)</span>
-        </a>
-        <p className="mt-2 text-center text-xs text-ink-3">
-          Tài khoản được tạo tự động lần đầu đăng nhập (JIT Provisioning)
-        </p>
-      </section>
+          <AlertCircle className="h-5 w-5 shrink-0 text-danger mt-0.5" aria-hidden="true" />
+          <span>{ssoErrorMessage}</span>
+        </div>
+      )}
 
-      <div className="flex items-center gap-3">
-        <div className="flex-1 border-t border-line" />
-        <span className="text-xs text-ink-3">hoặc</span>
-        <div className="flex-1 border-t border-line" />
-      </div>
+      {/* Khối 1: Đăng nhập Google SSO dành cho Sinh viên AGU */}
+      <AguSsoButton />
 
-      {/* Phân vùng Doanh nghiệp & Cán bộ (demo) */}
-      <section className="space-y-2">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-ink-3">
-          Doanh nghiệp & Cán bộ trường
-        </p>
-        <Link
-          to="/employer/jobs"
-          className={cn(
-            "flex w-full items-center justify-center gap-3 rounded-button",
-            "border border-line-strong bg-surface px-4 py-2.5 text-sm font-semibold text-ink",
-            "hover:border-brand-400 hover:bg-brand-50 transition-colors duration-150",
-          )}
-        >
-          <Building2 className="h-4 w-4 text-ink-2" aria-hidden="true" />
-          Vào cổng Doanh nghiệp (Demo)
-        </Link>
-        <Link
-          to="/career-center/approvals/companies"
-          className={cn(
-            "flex w-full items-center justify-center gap-3 rounded-button",
-            "border border-line-strong bg-surface px-4 py-2.5 text-sm font-semibold text-ink",
-            "hover:border-brand-400 hover:bg-brand-50 transition-colors duration-150",
-          )}
-        >
-          <Shield className="h-4 w-4 text-ink-2" aria-hidden="true" />
-          Vào cổng Cán bộ Hướng nghiệp (Demo)
-        </Link>
-      </section>
+      {/* Đường phân cách nhẹ giữa 2 luồng xác thực */}
+      <div className="border-t border-line" role="separator" />
 
-      {/* Đăng ký doanh nghiệp */}
-      <p className="text-center text-xs text-ink-3">
-        Doanh nghiệp chưa có tài khoản?{" "}
-        <Link to="/register" className="font-semibold text-brand-text hover:underline">
-          Đăng ký hợp tác
-        </Link>
-      </p>
+      {/* Khối 2: Form Email & Mật khẩu dành cho Career Center và Employer */}
+      <CredentialsLoginForm onOpenForgotPassword={() => setIsForgotModalOpen(true)} />
+
+      {/* Hộp thoại hướng dẫn khi bấm Quên mật khẩu */}
+      <ForgotPasswordModal
+        isOpen={isForgotModalOpen}
+        onClose={() => setIsForgotModalOpen(false)}
+      />
     </div>
   );
-}
+};
+
+export default LoginPage;

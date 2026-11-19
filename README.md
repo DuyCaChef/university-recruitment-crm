@@ -239,9 +239,17 @@ university-recruitment-crm/
 │       │   ├── auth/                                 # Xác thực, đăng nhập và Google SSO callback
 │       │   │   ├── api/
 │       │   │   │   └── authApi.ts                   # Gọi API đăng nhập, callback và phiên xác thực
+│       │   │   ├── components/
+│       │   │   │   ├── AguSsoButton.tsx             # Nút chuyển hướng Google SSO cho sinh viên
+│       │   │   │   ├── CredentialsLoginForm.tsx      # Form đăng nhập email/mật khẩu
+│       │   │   │   └── ForgotPasswordModal.tsx       # Hướng dẫn khôi phục mật khẩu
+│       │   │   ├── hooks/
+│       │   │   │   └── useLoginMutation.ts           # Mutation React Query và điều hướng sau đăng nhập
 │       │   │   ├── pages/
 │       │   │   │   ├── AuthCallbackPage.tsx         # Trang xử lý kết quả đăng nhập Google SSO
 │       │   │   │   └── LoginPage.tsx                # Trang đăng nhập/đăng ký
+│       │   │   ├── schemas/
+│       │   │   │   └── login.schema.ts              # Schema Zod xác thực form đăng nhập
 │       │   │   └── types.ts                         # Kiểu dữ liệu đầu vào và phản hồi xác thực
 │       │   ├── companies/                            # Nghiệp vụ hồ sơ doanh nghiệp (đang phát triển)
 │       │   ├── crm/                                  # CRM quan hệ, theo dõi đối tác và công việc Career Center

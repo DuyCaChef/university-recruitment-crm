@@ -1,26 +1,35 @@
-/** Payload JWT giải mã cơ bản */
-export interface JwtPayload {
-  sub: string;
+// src/features/auth/types.ts
+export type UserRole =
+  | "STUDENT"
+  | "EMPLOYER"
+  | "CAREER_CENTER"
+  | "SYSTEM_ADMIN";
+
+export type AccountStatus = "ACTIVE" | "LOCKED" | "INACTIVE";
+
+export interface AuthUser {
+  id: string;
   email: string;
-  role: "STUDENT" | "EMPLOYER" | "CAREER_CENTER" | "SYSTEM_ADMIN";
-  iat: number;
-  exp: number;
+  fullName?: string;
+  roles: UserRole[];
+  permissions: string[];
+  status?: AccountStatus;
+  mustChangePassword?: boolean;
 }
 
-/** Request đăng nhập mật khẩu nội bộ */
-export interface LoginRequest {
+export interface LoginRequestPayload {
   email: string;
   password: string;
 }
 
-/** Response đăng nhập thành công */
-export interface LoginResponse {
+export interface LoginResponseData {
   accessToken: string;
-  user: {
-    id: string;
-    email: string;
-    fullName: string;
-    role: "STUDENT" | "EMPLOYER" | "CAREER_CENTER" | "SYSTEM_ADMIN";
-    mustChangePassword: boolean;
-  };
+  user: AuthUser;
+  mustChangePassword?: boolean;
+}
+
+export interface ApiErrorPayload {
+  statusCode: number;
+  errorCode?: string;
+  message: string;
 }

@@ -75,8 +75,8 @@ axiosClient.interceptors.request.use(
 // 3. Response Interceptor: Tự động Silent Refresh khi gặp 401 Unauthorized
 axiosClient.interceptors.response.use(
   (response) => {
-    // Trả về trực tiếp dữ liệu body từ server
-    return response.data;
+    // Giữ nguyên AxiosResponse để mỗi caller xử lý response.data theo kiểu dữ liệu.
+    return response;
   },
   async (error: AxiosError) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined;

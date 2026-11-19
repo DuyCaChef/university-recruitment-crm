@@ -50,9 +50,10 @@ export class AuthService {
 
     // 2. Bảo vệ chống dò quét danh tính (Anti-Enumeration): Trả 401 chung nếu không tìm thấy
     if (!user) {
-      throw new UnauthorizedException(
-        'Thông tin email hoặc mật khẩu không chính xác.',
-      );
+      throw new UnauthorizedException({
+        message: 'Thông tin email hoặc mật khẩu không chính xác.',
+        errorCode: 'INVALID_CREDENTIALS',
+      });
     }
 
     // 3. So khớp mật khẩu băm qua PasswordService
@@ -61,19 +62,25 @@ export class AuthService {
       user.passwordHash,
     );
     if (!isPasswordValid) {
-      throw new UnauthorizedException(
-        'Thông tin email hoặc mật khẩu không chính xác.',
-      );
+      throw new UnauthorizedException({
+        message: 'Thông tin email hoặc mật khẩu không chính xác.',
+        errorCode: 'INVALID_CREDENTIALS',
+      });
     }
 
     // 4. Tầng 1: Kiểm tra trạng thái tài khoản (users.status)
     if (user.status === 'LOCKED') {
-      throw new ForbiddenException(
-        'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Career Center.',
-      );
+      throw new ForbiddenException({
+        message:
+          'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Career Center.',
+        errorCode: 'ACCOUNT_LOCKED',
+      });
     }
     if (user.status === 'INACTIVE') {
-      throw new ForbiddenException('Tài khoản hiện không còn hoạt động.');
+      throw new ForbiddenException({
+        message: 'Tài khoản hiện không còn hoạt động.',
+        errorCode: 'ACCOUNT_INACTIVE',
+      });
     }
 
     // 5. Thu thập danh sách Role và Permission phân phẳng (Flat list)

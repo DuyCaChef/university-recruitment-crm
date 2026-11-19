@@ -10,7 +10,9 @@ export interface HealthCheckResponse {
 export const healthService = {
   // Gọi API kiểm tra sức khỏe hệ thống
   checkHealth: async (): Promise<HealthCheckResponse> => {
-    return await axiosClient.get("/health");
+    const response =
+      await axiosClient.get<HealthCheckResponse>("/health");
+    return response.data;
   },
 
   // Gọi endpoint bảo vệ để kích hoạt lỗi 401 Unauthorized
