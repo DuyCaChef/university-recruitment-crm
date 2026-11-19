@@ -28,14 +28,22 @@ export class UploadStudentCvDto {
     default: false,
   })
   @IsOptional()
-  @Transform(({ value }) => {
-    if (typeof value === 'boolean') return value;
-    if (typeof value === 'string') {
-      const normalized = value.trim().toLowerCase();
+  @Transform(({ value, obj }) => {
+    const rawValue =
+      obj && typeof obj === 'object' && 'isDefault' in obj
+        ? (obj as Record<string, unknown>).isDefault
+        : value;
+
+    if (rawValue === undefined || rawValue === null || rawValue === '') {
+      return undefined;
+    }
+    if (typeof rawValue === 'boolean') return rawValue;
+    if (typeof rawValue === 'string') {
+      const normalized = rawValue.trim().toLowerCase();
       if (normalized === 'true') return true;
       if (normalized === 'false') return false;
     }
-    return value;
+    return '__INVALID_BOOLEAN__';
   })
   @IsBoolean({
     message: 'Trường isDefault phải là giá trị boolean (true/false)',
