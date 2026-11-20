@@ -1,7 +1,6 @@
 // src/layouts/AuthLayout.tsx
 import type { ReactElement } from "react";
 import { Outlet, Link } from "react-router-dom";
-import { GraduationCap } from "lucide-react";
 import { UI_LABELS } from "@/shared/constants/errors";
 
 export const AuthLayout = (): ReactElement => {
@@ -23,20 +22,14 @@ export const AuthLayout = (): ReactElement => {
           <div className="flex flex-col items-center text-center gap-3">
             <Link
               to="/"
-              className="inline-flex items-center gap-3 rounded-input p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              className="block w-full rounded-input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
               aria-label="Trang chủ Cổng Việc làm Trường Đại học An Giang"
             >
-              <div className="h-12 w-12 rounded-input bg-brand-600 text-surface flex items-center justify-center shrink-0 shadow-sm">
-                <GraduationCap className="h-7 w-7" aria-hidden="true" />
-              </div>
-              <div className="text-left">
-                <span className="block text-caption font-semibold tracking-wider text-brand-600 uppercase">
-                  {UI_LABELS.APP_UNIVERSITY_PARENT}
-                </span>
-                <span className="block text-h3 font-bold text-brand-600 leading-tight">
-                  {UI_LABELS.APP_UNIVERSITY_NAME}
-                </span>
-              </div>
+              <img
+                src="/images/logo_AGU_HCM.png"
+                alt="Đại học Quốc gia Thành phố Hồ Chí Minh - Trường Đại học An Giang"
+                className="h-auto w-full"
+              />
             </Link>
             <p className="text-small text-ink-2">
               {UI_LABELS.APP_PORTAL_SUBTITLE}

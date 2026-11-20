@@ -45,7 +45,7 @@ export const AguSsoButton = ({
           aria-hidden="true"
         >
           <img
-            src="/google-color.svg"
+            src="/icons/google-color.svg"
             alt=""
             className="h-7 w-7"
             aria-hidden="true"
