@@ -39,9 +39,9 @@ export const UI_LABELS = {
   APP_UNIVERSITY_NAME: "TRƯỜNG ĐẠI HỌC AN GIANG",
   APP_PORTAL_SUBTITLE: "Cổng thông tin Việc làm & Kết nối Doanh nghiệp",
   SSO_SECTION_LABEL: "ĐĂNG NHẬP QUA:",
-  SSO_BUTTON_TEXT: "Đăng nhập bằng e-mail AGU",
+  SSO_BUTTON_TEXT: "Đăng Nhập bằng GMail AGU",
   SSO_HELPER_TEXT: "Dành cho Sinh viên sử dụng tài khoản @student.agu.edu.vn",
-  CREDENTIALS_SECTION_LABEL: "HOẶC TÀI KHOẢN:",
+  CREDENTIALS_SECTION_LABEL: "ĐĂNG NHẬP BẰNG TÀI KHOẢN:",
   CREDENTIALS_HELPER_TEXT:
     "Dành cho Doanh nghiệp, Cán bộ Career Center & Quản trị viên",
 } as const;

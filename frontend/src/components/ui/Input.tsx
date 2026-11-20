@@ -1,5 +1,12 @@
 // src/components/ui/Input.tsx
-import { forwardRef, type InputHTMLAttributes, type ReactNode } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useState,
+  type ChangeEventHandler,
+  type InputHTMLAttributes,
+  type ReactNode,
+} from "react";
 import { AlertCircle } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
 
@@ -11,8 +18,24 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ id, label, error, rightElement, className, ...props }, ref) => {
+  ({ id, label, error, rightElement, className, value, defaultValue, onChange, ...props }, ref) => {
     const errorId = error ? `${id}-error` : undefined;
+    const [isEmpty, setIsEmpty] = useState<boolean>(
+      () => String(value ?? defaultValue ?? "").trim().length === 0,
+    );
+
+    useEffect(() => {
+      if (value !== undefined) {
+        setIsEmpty(String(value).trim().length === 0);
+      }
+    }, [value]);
+
+    const handleChange: ChangeEventHandler<HTMLInputElement> = (event) => {
+      setIsEmpty(event.target.value.trim().length === 0);
+      onChange?.(event);
+    };
+
+    const shouldShowErrorBorder = Boolean(error) && !isEmpty;
 
     return (
       <div className="flex flex-col gap-1.5">
@@ -31,12 +54,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               "hover:border-brand-400",
               "focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-100",
               "disabled:cursor-not-allowed disabled:bg-subtle disabled:text-ink-3",
-              error
-                ? "border-2 border-danger focus:border-danger focus:ring-4 focus:ring-danger/10"
+              shouldShowErrorBorder
+                ? "border-2 border-danger-border focus:border-danger-border focus:ring-4 focus:ring-danger-bg"
                 : "border-2 border-line-strong",
               rightElement ? "pr-11" : "",
               className,
             )}
+            value={value}
+            defaultValue={value === undefined ? defaultValue : undefined}
+            onChange={handleChange}
             {...props}
           />
           {rightElement && (
@@ -50,7 +76,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <p
             id={errorId}
             role="alert"
-            className="flex items-start gap-1.5 text-small text-danger"
+            className="flex items-start gap-1.5 text-small text-danger-ink"
           >
             <AlertCircle
               className="mt-0.5 h-4 w-4 shrink-0"

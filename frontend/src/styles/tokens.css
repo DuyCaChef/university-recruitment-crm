@@ -8,80 +8,80 @@
   color-scheme: light;
 
   /* ── Brand (Teal) ─────────────────────────── */
-  --c-brand-50:  #EEF5F6;
-  --c-brand-100: #D5E5E9;
-  --c-brand-200: #B2CDD5;
-  --c-brand-300: #8FB5BF;
-  --c-brand-400: #5C8E9C;
-  --c-brand-500: #3A7383;
-  --c-brand-600: #1D4E5F;
-  --c-brand-700: #163C4A;
-  --c-brand-800: #10303C;
-  --c-brand-900: #0F3340;
-  --c-brand-text: #1D4E5F;
+  --c-brand-50: #eef5f6;
+  --c-brand-100: #d5e5e9;
+  --c-brand-200: #b2cdd5;
+  --c-brand-300: #8fb5bf;
+  --c-brand-400: #5c8e9c;
+  --c-brand-500: #3a7383;
+  --c-brand-600: #1d4e5f;
+  --c-brand-700: #163c4a;
+  --c-brand-800: #10303c;
+  --c-brand-900: #0f3340;
+  --c-brand-text: #1d4e5f;
 
   /* ── Clay (đất nung) ──────────────────────── */
-  --c-clay-600: #A65A3E;
-  --c-clay-100: #F2E0D6;
-  --c-clay-ink: #7A3E27;
+  --c-clay-600: #a65a3e;
+  --c-clay-100: #f2e0d6;
+  --c-clay-ink: #7a3e27;
 
   /* ── Sand (cát) ───────────────────────────── */
-  --c-sand:     #D6A964;
-  --c-sand-100: #F4E8D2;
-  --c-sand-ink: #6B4A1C;
+  --c-sand: #d6a964;
+  --c-sand-100: #f4e8d2;
+  --c-sand-ink: #6b4a1c;
 
   /* ── Sage (xanh sage) ─────────────────────── */
-  --c-sage:     #7FA58A;
-  --c-sage-100: #DFEBE1;
-  --c-sage-ink: #2F5E42;
+  --c-sage: #7fa58a;
+  --c-sage-100: #dfebe1;
+  --c-sage-ink: #2f5e42;
 
   /* ── Mist (xám xanh) ─────────────────────── */
-  --c-mist-100: #DCE7ED;
-  --c-mist-ink: #2F5870;
+  --c-mist-100: #dce7ed;
+  --c-mist-ink: #2f5870;
 
   /* ── Mauve (tím xám) ─────────────────────── */
-  --c-mauve-100: #E9E2E8;
-  --c-mauve-ink: #5A4560;
+  --c-mauve-100: #e9e2e8;
+  --c-mauve-ink: #5a4560;
 
   /* ── Neutrals ─────────────────────────────── */
-  --c-canvas:      #F6F5F1;
-  --c-surface:     #FFFFFF;
-  --c-subtle:      #EFEDE6;
-  --c-line:        #E4E0D6;
-  --c-line-strong: #CBC6B8;
-  --c-ink:         #1E2321;
-  --c-ink-2:       #56605B;
-  --c-ink-3:       #7D867F;
-  --c-focus:       #2F7F95;
+  --c-canvas: #f6f5f1;
+  --c-surface: #ffffff;
+  --c-subtle: #efede6;
+  --c-line: #c3c3c3;
+  --c-line-strong: #9f9e99;
+  --c-ink: #1e2321;
+  --c-ink-2: #56605b;
+  --c-ink-3: #7d867f;
+  --c-focus: #2f7f95;
 
   /* ── Semantic ─────────────────────────────── */
-  --c-success-bg:     #DFEBE1;
-  --c-success-ink:    #2F5E42;
-  --c-success-border: #7FA58A;
+  --c-success-bg: #dfebe1;
+  --c-success-ink: #2f5e42;
+  --c-success-border: #7fa58a;
 
-  --c-warning-bg:     #F4E8D2;
-  --c-warning-ink:    #6B4A1C;
-  --c-warning-border: #D6A964;
+  --c-warning-bg: #f4e8d2;
+  --c-warning-ink: #6b4a1c;
+  --c-warning-border: #d6a964;
 
-  --c-danger-bg:     #FBE7E4;
-  --c-danger-ink:    #A3281C;
-  --c-danger-border: #D9574A;
+  --c-danger-bg: #fbe7e4;
+  --c-danger-ink: #a3281c;
+  --c-danger-border: #d9574a;
 
-  --c-info-bg:     #DCE7ED;
-  --c-info-ink:    #2F5870;
-  --c-info-border: #5C8E9C;
+  --c-info-bg: #dce7ed;
+  --c-info-ink: #2f5870;
+  --c-info-border: #5c8e9c;
 
-  --c-neutral-bg:     #EFEDE6;
-  --c-neutral-ink:    #56605B;
-  --c-neutral-border: #CBC6B8;
+  --c-neutral-bg: #efede6;
+  --c-neutral-ink: #56605b;
+  --c-neutral-border: #cbc6b8;
 
   /* ── Border Radius ────────────────────────── */
-  --radius-xs:     6px;
-  --radius-input:  12px;
+  --radius-xs: 6px;
+  --radius-input: 12px;
   --radius-button: 14px;
-  --radius-card:   18px;
-  --radius-panel:  24px;
-  --radius-pill:   999px;
+  --radius-card: 18px;
+  --radius-panel: 24px;
+  --radius-pill: 999px;
 
   /* ── Shadows (theme sáng) ─────────────────── */
   --shadow-sm: 0 1px 2px rgba(15, 51, 64, 0.06);
@@ -94,72 +94,72 @@
   color-scheme: dark;
 
   /* Brand */
-  --c-brand-50:  #0F2A35;
+  --c-brand-50: #0f2a35;
   --c-brand-100: #133545;
-  --c-brand-200: #1A4255;
+  --c-brand-200: #1a4255;
   --c-brand-300: #245068;
-  --c-brand-400: #2E6478;
-  --c-brand-500: #3A7383;
-  --c-brand-600: #2F6F84;
-  --c-brand-700: #3A8099;
-  --c-brand-800: #4A94AE;
-  --c-brand-900: #6AB0C8;
-  --c-brand-text: #8CC2D2;
+  --c-brand-400: #2e6478;
+  --c-brand-500: #3a7383;
+  --c-brand-600: #2f6f84;
+  --c-brand-700: #3a8099;
+  --c-brand-800: #4a94ae;
+  --c-brand-900: #6ab0c8;
+  --c-brand-text: #8cc2d2;
 
   /* Clay */
-  --c-clay-600: #D98E6E;
-  --c-clay-100: #3A2820;
-  --c-clay-ink: #F2E0D6;
+  --c-clay-600: #d98e6e;
+  --c-clay-100: #3a2820;
+  --c-clay-ink: #f2e0d6;
 
   /* Sand */
-  --c-sand:     #E0B878;
-  --c-sand-100: #3A2F1C;
-  --c-sand-ink: #F4E8D2;
+  --c-sand: #e0b878;
+  --c-sand-100: #3a2f1c;
+  --c-sand-ink: #f4e8d2;
 
   /* Sage */
-  --c-sage:     #9CC4A8;
-  --c-sage-100: #1F3328;
-  --c-sage-ink: #DFEBE1;
+  --c-sage: #9cc4a8;
+  --c-sage-100: #1f3328;
+  --c-sage-ink: #dfebe1;
 
   /* Mist */
-  --c-mist-100: #1C2D36;
-  --c-mist-ink: #8FB3C6;
+  --c-mist-100: #1c2d36;
+  --c-mist-ink: #8fb3c6;
 
   /* Mauve */
-  --c-mauve-100: #2E2632;
-  --c-mauve-ink: #B9A3C0;
+  --c-mauve-100: #2e2632;
+  --c-mauve-ink: #b9a3c0;
 
   /* Neutrals */
-  --c-canvas:      #0C1619;
-  --c-surface:     #14222A;
-  --c-subtle:      #1A2B33;
-  --c-line:        #263A43;
-  --c-line-strong: #3A4F59;
-  --c-ink:         #E8EEEC;
-  --c-ink-2:       #A9B8B4;
-  --c-ink-3:       #7F918D;
-  --c-focus:       #7CC4D9;
+  --c-canvas: #0c1619;
+  --c-surface: #14222a;
+  --c-subtle: #1a2b33;
+  --c-line: #263a43;
+  --c-line-strong: #3a4f59;
+  --c-ink: #e8eeec;
+  --c-ink-2: #a9b8b4;
+  --c-ink-3: #7f918d;
+  --c-focus: #7cc4d9;
 
   /* Semantic */
-  --c-success-bg:     #1F3328;
-  --c-success-ink:    #DFEBE1;
-  --c-success-border: #9CC4A8;
+  --c-success-bg: #1f3328;
+  --c-success-ink: #dfebe1;
+  --c-success-border: #9cc4a8;
 
-  --c-warning-bg:     #3A2F1C;
-  --c-warning-ink:    #F4E8D2;
-  --c-warning-border: #E0B878;
+  --c-warning-bg: #3a2f1c;
+  --c-warning-ink: #f4e8d2;
+  --c-warning-border: #e0b878;
 
-  --c-danger-bg:     #3A1F1C;
-  --c-danger-ink:    #F08A7E;
-  --c-danger-border: #D9574A;
+  --c-danger-bg: #3a1f1c;
+  --c-danger-ink: #f08a7e;
+  --c-danger-border: #d9574a;
 
-  --c-info-bg:     #1C2D36;
-  --c-info-ink:    #8FB3C6;
-  --c-info-border: #2E6478;
+  --c-info-bg: #1c2d36;
+  --c-info-ink: #8fb3c6;
+  --c-info-border: #2e6478;
 
-  --c-neutral-bg:     #1A2B33;
-  --c-neutral-ink:    #A9B8B4;
-  --c-neutral-border: #3A4F59;
+  --c-neutral-bg: #1a2b33;
+  --c-neutral-ink: #a9b8b4;
+  --c-neutral-border: #3a4f59;
 
   /* Shadows: thay bằng viền trong dark mode */
   --shadow-sm: none;

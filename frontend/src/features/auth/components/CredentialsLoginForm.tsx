@@ -83,11 +83,11 @@ export const CredentialsLoginForm = ({
       <div className="flex flex-col gap-1 text-center">
         <h2
           id="credentials-login-heading"
-          className="mx-auto w-fit rounded-pill bg-sand-100 px-3 py-1 text-caption font-semibold uppercase tracking-wider text-sand-ink"
+          className="mx-auto w-fit px-3 text-caption font-bold uppercase tracking-wider text-sand-ink"
         >
           {UI_LABELS.CREDENTIALS_SECTION_LABEL}
         </h2>
-        <p className="text-caption text-ink-2">
+        <p className="text-sm text-ink-2">
           {UI_LABELS.CREDENTIALS_HELPER_TEXT}
         </p>
       </div>
