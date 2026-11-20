@@ -129,6 +129,7 @@ export const CredentialsLoginForm = ({
         className="flex flex-col gap-4"
       >
         <Input
+          className="text-sm"
           id="login-email"
           type="email"
           label="Email tài khoản"
@@ -140,6 +141,7 @@ export const CredentialsLoginForm = ({
         />
 
         <Input
+          className="text-sm"
           id="login-password"
           type={showPassword ? "text" : "password"}
           label="Mật khẩu"
@@ -172,7 +174,7 @@ export const CredentialsLoginForm = ({
             fullWidth
             isLoading={loginMutation.isPending}
             disabled={isAccountBlocked}
-            className="border-brand-400 text-brand-600 font-semibold hover:bg-brand-50 hover:border-brand-600"
+            className="border-sand text-white bg-sand-ink font-semibold hover:bg-[#4F3713] hover:border-[#4F3713] hover:text-white"
           >
             Đăng nhập
           </Button>
