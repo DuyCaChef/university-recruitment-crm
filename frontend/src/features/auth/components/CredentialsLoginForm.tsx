@@ -24,7 +24,8 @@ export const CredentialsLoginForm = ({
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    getValues,
+    formState: { errors, isSubmitted },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     mode: "onBlur",
@@ -74,6 +75,12 @@ export const CredentialsLoginForm = ({
   const isAccountLocked = serverError?.code === "ACCOUNT_LOCKED";
   const isAccountInactive = serverError?.code === "ACCOUNT_INACTIVE";
   const isAccountBlocked = isAccountLocked || isAccountInactive;
+  const emailValue = getValues("email") ?? "";
+  const passwordValue = getValues("password") ?? "";
+  const shouldShowEmailError =
+    Boolean(errors.email) && (isSubmitted || emailValue.trim().length > 0);
+  const shouldShowPasswordError =
+    Boolean(errors.password) && (isSubmitted || passwordValue.length > 0);
 
   return (
     <section
@@ -128,7 +135,7 @@ export const CredentialsLoginForm = ({
           placeholder="Nhập email doanh nghiệp hoặc cán bộ..."
           autoComplete="email"
           disabled={loginMutation.isPending || isAccountBlocked}
-          error={errors.email?.message}
+          error={shouldShowEmailError ? errors.email?.message : undefined}
           {...register("email")}
         />
 
@@ -139,18 +146,18 @@ export const CredentialsLoginForm = ({
           placeholder="Nhập mật khẩu..."
           autoComplete="current-password"
           disabled={loginMutation.isPending || isAccountBlocked}
-          error={errors.password?.message}
+          error={shouldShowPasswordError ? errors.password?.message : undefined}
           rightElement={
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
               aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-xs text-ink-2 hover:bg-subtle hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              className="inline-flex h-8 w-10 items-center justify-center rounded-xs text-ink-2 hover:bg-subtle hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             >
               {showPassword ? (
-                <EyeOff className="h-4 w-4" aria-hidden="true" />
+                <EyeOff className="h-5 w-5" aria-hidden="true" />
               ) : (
-                <Eye className="h-4 w-4" aria-hidden="true" />
+                <Eye className="h-5 w-5" aria-hidden="true" />
               )}
             </button>
           }

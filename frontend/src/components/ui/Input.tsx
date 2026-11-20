@@ -18,7 +18,20 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ id, label, error, rightElement, className, value, defaultValue, onChange, ...props }, ref) => {
+  (
+    {
+      id,
+      label,
+      error,
+      rightElement,
+      className,
+      value,
+      defaultValue,
+      onChange,
+      ...props
+    },
+    ref,
+  ) => {
     const errorId = error ? `${id}-error` : undefined;
     const [isEmpty, setIsEmpty] = useState<boolean>(
       () => String(value ?? defaultValue ?? "").trim().length === 0,
@@ -76,7 +89,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <p
             id={errorId}
             role="alert"
-            className="flex items-start gap-1.5 text-small text-danger-ink"
+            className="flex items-start gap-1.5 text-xs text-danger-ink"
           >
             <AlertCircle
               className="mt-0.5 h-4 w-4 shrink-0"
