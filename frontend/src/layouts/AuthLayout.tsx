@@ -17,7 +17,7 @@ export const AuthLayout = (): ReactElement => {
 
       {/* Main container căn giữa */}
       <main className="relative flex-1 flex items-center justify-center px-4 py-8 md:px-6">
-        <div className="w-full max-w-md rounded-panel bg-surface border-2 border-line shadow-lg p-6 md:p-8 flex flex-col gap-6">
+        <div className="w-full max-w-lg rounded-panel bg-surface border-2 border-line shadow-lg p-6 md:p-8 flex flex-col gap-6">
           {/* Header cụm Logo & Tên trường theo mẫu thiết kế */}
           <div className="flex flex-col items-center text-center gap-3">
             <Link
