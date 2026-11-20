@@ -36,7 +36,13 @@ export const LoginPage = (): ReactElement => {
       <AguSsoButton />
 
       {/* Đường phân cách nhẹ giữa 2 luồng xác thực */}
-      <div className="border-t border-line" role="separator" />
+      <div className="relative flex items-center" role="separator" aria-label="Hoặc">
+        <div className="h-px flex-1 bg-line" />
+        <span className="mx-3 rounded-pill bg-mauve-100 px-3 py-1 text-caption font-semibold text-mauve-ink">
+          HOẶC
+        </span>
+        <div className="h-px flex-1 bg-line" />
+      </div>
 
       {/* Khối 2: Form Email & Mật khẩu dành cho Career Center và Employer */}
       <CredentialsLoginForm onOpenForgotPassword={() => setIsForgotModalOpen(true)} />

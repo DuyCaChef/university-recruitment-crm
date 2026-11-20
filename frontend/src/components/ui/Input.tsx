@@ -32,8 +32,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               "focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-100",
               "disabled:cursor-not-allowed disabled:bg-subtle disabled:text-ink-3",
               error
-                ? "border-danger focus:border-danger focus:ring- clay-100"
-                : "border-line-strong",
+                ? "border-2 border-danger focus:border-danger focus:ring-4 focus:ring-danger/10"
+                : "border-2 border-line-strong",
               rightElement ? "pr-11" : "",
               className,
             )}
