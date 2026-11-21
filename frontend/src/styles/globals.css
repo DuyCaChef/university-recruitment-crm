@@ -11,7 +11,9 @@
 
 /* ── Base reset & typography ─────────────────────── */
 @layer base {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     box-sizing: border-box;
   }
 
@@ -41,7 +43,9 @@
   }
 
   /* ── Heading balance ───────────────────── */
-  h1, h2, h3 {
+  h1,
+  h2,
+  h3 {
     text-wrap: balance;
   }
 
@@ -59,9 +63,66 @@
   }
 }
 
-/* ── Reduced motion ─────────────────────────────── */
+/* ── Hiệu ứng nền Landing Page cho AuthLayout (DESIGN_SYSTEM.md 4.4) ── */
+@keyframes agu-neuron-orbit-cw {
+  from {
+    transform: rotate(0deg) translate3d(24px, 0, 0) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translate3d(24px, 0, 0) rotate(-360deg);
+  }
+}
+
+@keyframes agu-neuron-orbit-ccw {
+  from {
+    transform: rotate(0deg) translate3d(28px, 0, 0) rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg) translate3d(28px, 0, 0) rotate(360deg);
+  }
+}
+
+@keyframes agu-dot-orbit {
+  from {
+    transform: rotate(0deg) translate3d(14px, 0, 0) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translate3d(14px, 0, 0) rotate(-360deg);
+  }
+}
+
+@keyframes agu-dash-flow {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-agu-neuron-a {
+  animation: agu-neuron-orbit-cw 11s linear infinite;
+}
+
+.animate-agu-neuron-b {
+  animation: agu-neuron-orbit-ccw 14s linear infinite;
+  animation-delay: -3.5s;
+}
+
+.animate-agu-dot-float {
+  animation: agu-dot-orbit 9s linear infinite;
+}
+
+.animate-agu-dash {
+  stroke-dasharray: 4 4;
+  animation: agu-dash-flow 2s linear infinite;
+}
+
+/* ── Reduced motion (đặt cuối cùng để ghi đè khi hệ điều hành tắt hiệu ứng) ── */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
