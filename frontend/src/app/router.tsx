@@ -7,6 +7,8 @@ import { FocusLayout } from "@/layouts/FocusLayout";
 /* ── Lazy-loaded pages ──────────────────────────── */
 const LoginPage              = lazy(() => import("@/features/auth/pages/LoginPage"));
 const AuthCallbackPage       = lazy(() => import("@/features/auth/pages/AuthCallbackPage"));
+const UnauthorizedPage       = lazy(() => import("@/features/auth/pages/UnauthorizedPage"));
+const ForbiddenPage          = lazy(() => import("@/features/auth/pages/ForbiddenPage"));
 const StudentJobsPage        = lazy(() => import("@/features/students/pages/StudentJobsPage"));
 const EmployerPipelinePage   = lazy(() => import("@/features/pipeline/pages/EmployerPipelinePage"));
 const CareerCenterCrmPage    = lazy(() => import("@/features/crm/pages/CareerCenterCrmPage"));
@@ -37,6 +39,8 @@ export function AppRouter() {
 
           {/* Google SSO callback — độc lập, không layout */}
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+          <Route path="/forbidden" element={<ForbiddenPage />} />
 
           {/* Focus: đổi mật khẩu bắt buộc (chỉ cho EMPLOYER/CAREER_CENTER/SYSTEM_ADMIN) */}
           <Route element={<FocusLayout />}>

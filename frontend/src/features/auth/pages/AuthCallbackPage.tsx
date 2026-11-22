@@ -19,11 +19,19 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     const token = searchParams.get("token");
+    const errorCode = searchParams.get("error");
 
     if (token) {
       // Lưu Access Token — backend JIT đã tạo / cập nhật tài khoản sinh viên
       localStorage.setItem("access_token", token);
       navigate("/student/jobs", { replace: true });
+    } else if (errorCode === "STUDENT_MASTER_NOT_FOUND") {
+      navigate("/unauthorized", { replace: true });
+    } else if (
+      errorCode === "STUDENT_SUSPENDED" ||
+      errorCode === "STUDENT_SUPPEND"
+    ) {
+      navigate("/forbidden", { replace: true });
     } else {
       // Không có token — quay về login
       navigate("/login", { replace: true });

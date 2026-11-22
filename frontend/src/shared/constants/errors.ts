@@ -17,6 +17,8 @@ export const ERROR_MESSAGES: Record<string, string> = {
     "Chỉ chấp nhận tài khoản email sinh viên Trường Đại học An Giang (@student.agu.edu.vn).",
   STUDENT_MASTER_NOT_FOUND:
     "Email sinh viên hợp lệ nhưng chưa có trong danh sách đào tạo được cấp quyền truy cập hệ thống.",
+  STUDENT_SUSPENDED:
+    "Tài khoản sinh viên đang bị đình chỉ và chưa được cấp quyền truy cập hệ thống.",
 
   // Trạng thái thẩm định Doanh nghiệp
   COMPANY_PENDING:
