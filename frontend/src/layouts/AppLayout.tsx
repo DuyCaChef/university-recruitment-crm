@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet, NavLink, Link, useLocation } from "react-router-dom";
+import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Briefcase, User, FileText, Calendar, Bookmark,
   Building2, Kanban, LayoutDashboard,
@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
 import type { UserRole } from "@/shared/types/common.types";
+import { logout } from "@/features/auth/api/authApi";
 
 /* ── Icon map — gắn icon thực cho từng route ─────── */
 const ICON_MAP: Record<string, typeof Briefcase> = {
@@ -92,6 +93,7 @@ export function AppLayout({ role = "STUDENT", userName = "Người dùng", userA
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navItems = NAV_ITEMS[role];
   const primaryItems = navItems.filter((item) => item.primary);
@@ -102,6 +104,16 @@ export function AppLayout({ role = "STUDENT", userName = "Người dùng", userA
     const next = !isDark;
     setIsDark(next);
     html.setAttribute("data-theme", next ? "dark" : "light");
+  };
+
+  const handleLogout = async (): Promise<void> => {
+    try {
+      await logout();
+    } finally {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user_info");
+      navigate("/login", { replace: true });
+    }
   };
 
   const getPageTitle = () => {
@@ -207,13 +219,14 @@ export function AppLayout({ role = "STUDENT", userName = "Người dùng", userA
             >
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
-            <Link
-              to="/login"
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
               title="Đăng xuất"
               className="rounded-button p-2 text-ink-2 hover:bg-danger-bg hover:text-danger-ink transition-colors"
             >
               <LogOut className="h-4 w-4" />
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -247,9 +260,9 @@ export function AppLayout({ role = "STUDENT", userName = "Người dùng", userA
           <button onClick={toggleTheme} title={isDark ? "Chuyển sang sáng" : "Chuyển sang tối"} className="rounded-button p-2 text-ink-2 hover:bg-subtle transition-colors">
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
-          <Link to="/login" title="Đăng xuất" className="rounded-button p-2 text-ink-2 hover:bg-danger-bg hover:text-danger-ink transition-colors">
+          <button type="button" onClick={() => void handleLogout()} title="Đăng xuất" className="rounded-button p-2 text-ink-2 hover:bg-danger-bg hover:text-danger-ink transition-colors">
             <LogOut className="h-4 w-4" />
-          </Link>
+          </button>
         </div>
       </aside>
 
@@ -296,9 +309,9 @@ export function AppLayout({ role = "STUDENT", userName = "Người dùng", userA
           <button onClick={toggleTheme} className="rounded-button p-2 text-ink-2 hover:bg-subtle">
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
-          <Link to="/login" title="Đăng xuất" className="rounded-button p-2 text-ink-2 hover:bg-danger-bg hover:text-danger-ink">
+          <button type="button" onClick={() => void handleLogout()} title="Đăng xuất" className="rounded-button p-2 text-ink-2 hover:bg-danger-bg hover:text-danger-ink">
             <LogOut className="h-4 w-4" />
-          </Link>
+          </button>
         </div>
       </div>
 

@@ -9,6 +9,7 @@ const LoginPage              = lazy(() => import("@/features/auth/pages/LoginPag
 const AuthCallbackPage       = lazy(() => import("@/features/auth/pages/AuthCallbackPage"));
 const UnauthorizedPage       = lazy(() => import("@/features/auth/pages/UnauthorizedPage"));
 const ForbiddenPage          = lazy(() => import("@/features/auth/pages/ForbiddenPage"));
+const ChangePasswordPage     = lazy(() => import("@/features/auth/pages/ChangePasswordPage"));
 const StudentJobsPage        = lazy(() => import("@/features/students/pages/StudentJobsPage"));
 const EmployerPipelinePage   = lazy(() => import("@/features/pipeline/pages/EmployerPipelinePage"));
 const CareerCenterCrmPage    = lazy(() => import("@/features/crm/pages/CareerCenterCrmPage"));
@@ -44,7 +45,7 @@ export function AppRouter() {
 
           {/* Focus: đổi mật khẩu bắt buộc (chỉ cho EMPLOYER/CAREER_CENTER/SYSTEM_ADMIN) */}
           <Route element={<FocusLayout />}>
-            <Route path="/change-password" element={<div className="text-ink text-sm">Form đổi mật khẩu</div>} />
+            <Route path="/change-password" element={<ChangePasswordPage />} />
             <Route path="/pending-approval" element={<div className="text-ink text-sm">Tài khoản đang chờ duyệt</div>} />
           </Route>
 

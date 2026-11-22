@@ -45,7 +45,7 @@ const processQueue = (error: unknown, token: string | null = null): void => {
 /**
  * Dọn sạch phiên lưu trữ tại Client và điều hướng về trang đăng nhập
  */
-const clearSessionAndRedirect = (): void => {
+export const clearSessionAndRedirect = (): void => {
   localStorage.removeItem("access_token");
   localStorage.removeItem("user_info");
 

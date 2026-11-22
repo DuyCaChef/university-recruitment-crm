@@ -6,7 +6,7 @@ export const loginSchema = z.object({
     .string()
     .trim()
     .min(1, "Vui lòng nhập địa chỉ email tài khoản của bạn.")
-    .email("Địa chỉ email không đúng định dạng (ví dụ: hr@doanhnghiep.vn)."),
+    .email("Địa chỉ email không đúng định dạng."),
   password: z
     .string()
     .min(1, "Vui lòng nhập mật khẩu.")

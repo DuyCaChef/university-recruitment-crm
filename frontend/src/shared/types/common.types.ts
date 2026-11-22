@@ -25,8 +25,11 @@ export type UserRole =
 export interface CurrentUser {
   id: string;
   email: string;
-  fullName: string;
-  role: UserRole;
+  fullName?: string;
+  role?: UserRole;
+  status?: "ACTIVE" | "LOCKED" | "INACTIVE";
   avatarUrl?: string;
   mustChangePassword: boolean;
+  lastLoginAt?: string;
+  createdAt?: string;
 }

@@ -1,5 +1,6 @@
-import { Outlet, Link } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { GraduationCap, LogOut } from "lucide-react";
+import { logout } from "@/features/auth/api/authApi";
 
 /**
  * FocusLayout — Tối giản, chỉ có logo + 1 nút đăng xuất.
@@ -7,6 +8,18 @@ import { GraduationCap, LogOut } from "lucide-react";
  * chờ duyệt tài khoản. KHÔNG dùng cho STUDENT (SSO, không cần đổi mật khẩu).
  */
 export function FocusLayout() {
+  const navigate = useNavigate();
+
+  const handleLogout = async (): Promise<void> => {
+    try {
+      await logout();
+    } finally {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user_info");
+      navigate("/login", { replace: true });
+    }
+  };
+
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-canvas px-4">
       {/* Logo */}
@@ -26,13 +39,14 @@ export function FocusLayout() {
       </div>
 
       {/* Logout */}
-      <Link
-        to="/login"
+      <button
+        type="button"
+        onClick={() => void handleLogout()}
         className="mt-6 flex items-center gap-2 text-sm text-ink-2 hover:text-danger-ink transition-colors"
       >
         <LogOut className="h-4 w-4" aria-hidden="true" />
         Đăng xuất
-      </Link>
+      </button>
     </div>
   );
 }

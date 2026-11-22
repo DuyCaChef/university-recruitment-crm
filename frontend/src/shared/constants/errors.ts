@@ -7,6 +7,8 @@ export const ERROR_MESSAGES: Record<string, string> = {
     "Tài khoản đã bị khóa. Vui lòng liên hệ Trung tâm Hướng nghiệp & HTSV để được hỗ trợ.",
   ACCOUNT_INACTIVE:
     "Tài khoản hiện không còn hoạt động. Vui lòng liên hệ bộ phận quản trị để kích hoạt lại.",
+  SSO_REQUIRED:
+    "Sinh viên bắt buộc đăng nhập bằng nút Gmail AGU (@student.agu.edu.vn).",
   PASSWORD_CHANGE_REQUIRED:
     "Bạn cần đặt mật khẩu mới trước khi sử dụng hệ thống.",
   TOO_MANY_REQUESTS:

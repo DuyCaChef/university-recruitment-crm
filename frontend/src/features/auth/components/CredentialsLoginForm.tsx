@@ -19,6 +19,7 @@ export const CredentialsLoginForm = ({
   onOpenForgotPassword,
 }: CredentialsLoginFormProps): ReactElement => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [isSsoRequired, setIsSsoRequired] = useState<boolean>(false);
   const loginMutation = useLoginMutation();
 
   const {
@@ -36,6 +37,11 @@ export const CredentialsLoginForm = ({
   });
 
   const onSubmit = (values: LoginFormValues): void => {
+    if (values.email.trim().toLowerCase().endsWith("@student.agu.edu.vn")) {
+      setIsSsoRequired(true);
+      return;
+    }
+    setIsSsoRequired(false);
     loginMutation.mutate(values);
   };
 
@@ -100,6 +106,24 @@ export const CredentialsLoginForm = ({
       </div>
 
       {/* Hiển thị cảnh báo lỗi từ Server ở đầu Form (Mục 8.6 & 10.3 DESIGN_SYSTEM.md) */}
+      {isSsoRequired && (
+        <div
+          role="alert"
+          className="rounded-input border border-danger bg-clay-100 p-3.5 text-small text-clay-ink flex items-start gap-2.5"
+        >
+          <ShieldAlert
+            className="h-5 w-5 shrink-0 text-danger mt-0.5"
+            aria-hidden="true"
+          />
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold text-danger">
+              Sinh viên phải dùng Google SSO
+            </span>
+            <span>{ERROR_MESSAGES.SSO_REQUIRED}</span>
+          </div>
+        </div>
+      )}
+
       {serverError && (
         <div
           role="alert"

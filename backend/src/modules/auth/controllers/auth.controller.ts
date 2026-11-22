@@ -8,6 +8,8 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -163,13 +165,28 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleAuthCallback(@Req() req: any, @Res() res: Response) {
-    const result = await this.authService.handleGoogleAuth(req.user);
-
-    // Chuyển hướng về Frontend kèm Access Token
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-    return res.redirect(
-      `${clientUrl}/auth/callback?token=${result.accessToken}`,
-    );
+    try {
+      const result = await this.authService.handleGoogleAuth(req.user, res);
+      return res.redirect(
+        `${clientUrl}/auth/callback?token=${encodeURIComponent(result.accessToken)}`,
+      );
+    } catch (error: unknown) {
+      let errorCode = 'SSO_DOMAIN_FORBIDDEN';
+
+      if (error instanceof UnauthorizedException) {
+        const message = error.message || '';
+        if (message.includes('danh sách dữ liệu')) {
+          errorCode = 'STUDENT_MASTER_NOT_FOUND';
+        }
+      } else if (error instanceof ForbiddenException) {
+        errorCode = 'STUDENT_SUSPENDED';
+      }
+
+      return res.redirect(
+        `${clientUrl}/login?error=${encodeURIComponent(errorCode)}`,
+      );
+    }
   }
 
   // ===========================================================================

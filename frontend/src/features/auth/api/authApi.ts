@@ -1,6 +1,6 @@
 // src/features/auth/api/authApi.ts
 import { axiosClient } from "@/shared/api/axiosClient";
-import type { ApiResponse } from "@/shared/types/common.types";
+import type { ApiResponse, CurrentUser } from "@/shared/types/common.types";
 import type { LoginRequestPayload, LoginResponseData } from "../types";
 
 const API_BASE_URL =
@@ -34,4 +34,33 @@ export const loginWithCredentials = async (
  */
 export const getAguGoogleSsoUrl = (): string => {
   return `${API_BASE_URL}/auth/google`;
+};
+
+/**
+ * Nạp ngữ cảnh người dùng sau khi hoàn tất Google SSO.
+ */
+export const getCurrentUser = async (): Promise<CurrentUser> => {
+  const response = await axiosClient.get<ApiResponse<CurrentUser>>(
+    "/auth/current-user",
+  );
+  return response.data.data;
+};
+
+export const logout = async (): Promise<void> => {
+  await axiosClient.post<ApiResponse<null>>("/auth/logout");
+};
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export const changePassword = async (
+  payload: ChangePasswordPayload,
+): Promise<void> => {
+  await axiosClient.post<ApiResponse<null>>(
+    "/auth/change-password",
+    payload,
+  );
 };

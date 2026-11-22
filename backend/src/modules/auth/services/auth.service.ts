@@ -68,7 +68,19 @@ export class AuthService {
       });
     }
 
-    // 4. Tầng 1: Kiểm tra trạng thái tài khoản (users.status)
+    // 4. Sinh viên bắt buộc sử dụng Google SSO, không đăng nhập bằng mật khẩu nội bộ
+    const isStudent = user.userRoles.some(
+      (userRole) => userRole.role.code === 'STUDENT',
+    );
+    if (isStudent) {
+      throw new ForbiddenException({
+        message:
+          'Sinh viên bắt buộc đăng nhập bằng tài khoản Google AGU (@student.agu.edu.vn).',
+        errorCode: 'SSO_REQUIRED',
+      });
+    }
+
+    // 5. Tầng 1: Kiểm tra trạng thái tài khoản (users.status)
     if (user.status === 'LOCKED') {
       throw new ForbiddenException({
         message:
@@ -422,7 +434,10 @@ export class AuthService {
    * 1. Đối soát email trường với danh mục gốc student_masters
    * 2. Tra cứu tài khoản users kèm quan hệ roles và permissions
    */
-  async handleGoogleAuth(googleUser: { email: string; fullName: string }) {
+  async handleGoogleAuth(
+    googleUser: { email: string; fullName: string },
+    res: Response,
+  ) {
     // 1. Đối soát email trường với danh mục gốc student_masters
     const masterData = await this.prisma.studentMaster.findUnique({
       where: { institutionalEmail: googleUser.email },
@@ -582,6 +597,7 @@ export class AuthService {
     const refreshToken = await this.tokenService.generateRefreshToken({
       sub: user.id,
     });
+    this.tokenService.setRefreshTokenCookie(res, refreshToken);
 
     await this.prisma.user.update({
       where: { id: user.id },
