@@ -31,5 +31,5 @@ export interface LoginResponseData {
 export interface ApiErrorPayload {
   statusCode: number;
   errorCode?: string;
-  message: string;
+  message: string | string[];
 }

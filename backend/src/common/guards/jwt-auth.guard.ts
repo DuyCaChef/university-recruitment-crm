@@ -57,9 +57,11 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         currentPath.includes('/auth/logout');
 
       if (!isAllowedEndpoint) {
-        throw new ForbiddenException(
-          'Yêu cầu bắt buộc đổi mật khẩu trong lần đầu đăng nhập trước khi tiếp tục thao tác.',
-        );
+        throw new ForbiddenException({
+          statusCode: 403,
+          errorCode: 'PASSWORD_CHANGE_REQUIRED',
+          message: 'Yêu cầu bắt buộc đổi mật khẩu trong lần đầu đăng nhập trước khi tiếp tục thao tác.',
+        });
       }
     }
     return user; // Trả về thông tin user đã xác thực để gắn vào req.user

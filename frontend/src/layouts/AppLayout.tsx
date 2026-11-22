@@ -5,12 +5,13 @@ import {
   Building2, Kanban, LayoutDashboard,
   CheckCircle, FileCheck2, MessageSquareCheck, BarChart3,
   Users, Shield, ClipboardList, CalendarDays,
-  Bell, LogOut, Menu, X, Sun, Moon, ChevronLeft, ChevronRight, MoreHorizontal,
+  Bell, LogOut, Menu, X, ChevronLeft, ChevronRight, MoreHorizontal,
   GraduationCap,
 } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
 import type { UserRole } from "@/shared/types/common.types";
 import { logout } from "@/features/auth/api/authApi";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 /* ── Icon map — gắn icon thực cho từng route ─────── */
 const ICON_MAP: Record<string, typeof Briefcase> = {
@@ -91,20 +92,12 @@ const ROLE_LABEL: Record<UserRole, string> = {
 export function AppLayout({ role = "STUDENT", userName = "Người dùng", userAvatar }: AppLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [isDark, setIsDark] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
   const navItems = NAV_ITEMS[role];
   const primaryItems = navItems.filter((item) => item.primary);
   const secondaryItems = navItems.filter((item) => !item.primary);
-
-  const toggleTheme = () => {
-    const html = document.documentElement;
-    const next = !isDark;
-    setIsDark(next);
-    html.setAttribute("data-theme", next ? "dark" : "light");
-  };
 
   const handleLogout = async (): Promise<void> => {
     try {
@@ -212,13 +205,7 @@ export function AppLayout({ role = "STUDENT", userName = "Người dùng", userA
             </div>
           )}
           <div className={cn("flex items-center", sidebarCollapsed ? "flex-col gap-2" : "justify-between px-1")}>
-            <button
-              onClick={toggleTheme}
-              title={isDark ? "Chuyển sang sáng" : "Chuyển sang tối"}
-              className="rounded-button p-2 text-ink-2 hover:bg-subtle hover:text-ink transition-colors"
-            >
-              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
+            <ThemeToggle variant="ghost" size="sm" />
             <button
               type="button"
               onClick={() => void handleLogout()}
@@ -257,9 +244,7 @@ export function AppLayout({ role = "STUDENT", userName = "Người dùng", userA
           ))}
         </nav>
         <div className="border-t border-line p-2 flex flex-col items-center gap-2">
-          <button onClick={toggleTheme} title={isDark ? "Chuyển sang sáng" : "Chuyển sang tối"} className="rounded-button p-2 text-ink-2 hover:bg-subtle transition-colors">
-            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
+          <ThemeToggle variant="ghost" size="sm" />
           <button type="button" onClick={() => void handleLogout()} title="Đăng xuất" className="rounded-button p-2 text-ink-2 hover:bg-danger-bg hover:text-danger-ink transition-colors">
             <LogOut className="h-4 w-4" />
           </button>
@@ -306,9 +291,7 @@ export function AppLayout({ role = "STUDENT", userName = "Người dùng", userA
           ))}
         </nav>
         <div className="border-t border-line p-4 flex items-center justify-between">
-          <button onClick={toggleTheme} className="rounded-button p-2 text-ink-2 hover:bg-subtle">
-            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
+          <ThemeToggle variant="ghost" size="sm" />
           <button type="button" onClick={() => void handleLogout()} title="Đăng xuất" className="rounded-button p-2 text-ink-2 hover:bg-danger-bg hover:text-danger-ink">
             <LogOut className="h-4 w-4" />
           </button>

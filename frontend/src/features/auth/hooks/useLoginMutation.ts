@@ -2,18 +2,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { loginWithCredentials, authKeys } from "../api/authApi";
+import { getDefaultRouteByRole } from "../utils/authSession";
 import type {
   LoginRequestPayload,
   LoginResponseData,
-  UserRole,
 } from "../types";
-
-const getDefaultRouteByRole = (roles: UserRole[]): string => {
-  if (roles.includes("CAREER_CENTER")) return "/career-center/dashboard";
-  if (roles.includes("EMPLOYER")) return "/employer/jobs";
-  if (roles.includes("SYSTEM_ADMIN")) return "/admin/users";
-  return "/student/jobs";
-};
 
 export const useLoginMutation = () => {
   const navigate = useNavigate();
@@ -25,19 +18,29 @@ export const useLoginMutation = () => {
       // 1. Lưu Access Token phục vụ Request Interceptor
       localStorage.setItem("access_token", data.accessToken);
 
-      // 2. Cập nhật cache thông tin người dùng hiện tại
-      queryClient.setQueryData(authKeys.currentUser(), data.user);
-
-      // 3. Kiểm tra cờ bắt buộc đổi mật khẩu lần đầu (chỉ áp dụng cho non-STUDENT)
+      // 2. Xác định cờ bắt buộc đổi mật khẩu lần đầu
       const mustChange = Boolean(
         data.mustChangePassword || data.user.mustChangePassword,
       );
+
+      const userWithState = {
+        ...data.user,
+        mustChangePassword: mustChange,
+      };
+
+      // Lưu thông tin người dùng vào localStorage để duy trì trạng thái phiên và Router Guard
+      localStorage.setItem("user_info", JSON.stringify(userWithState));
+
+      // 3. Cập nhật cache thông tin người dùng hiện tại
+      queryClient.setQueryData(authKeys.currentUser(), userWithState);
+
+      // 4. Khóa điều hướng: Đẩy sang /change-password bên trong FocusLayout nếu mustChangePassword == true
       if (mustChange && !data.user.roles.includes("STUDENT")) {
         navigate("/change-password", { replace: true });
         return;
       }
 
-      // 4. Điều hướng vào không gian làm việc tương ứng với Role
+      // 5. Điều hướng vào không gian làm việc tương ứng với Role (AppLayout)
       const targetRoute = getDefaultRouteByRole(data.user.roles);
       navigate(targetRoute, { replace: true });
     },

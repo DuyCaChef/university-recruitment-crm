@@ -22,7 +22,7 @@ export class AuthService {
     private readonly passwordService: PasswordService,
     private readonly tokenService: TokenService,
     private readonly auditLogService: AuditLogService,
-  ) {}
+  ) { }
 
   /**
    * Nghiệp vụ xác thực thông tin đăng nhập và cấp phát phiên làm việc
@@ -271,6 +271,24 @@ export class AuthService {
         lastLoginAt: true,
         createdAt: true,
         // Chống rò rỉ dữ liệu: Tuyệt đối KHÔNG select passwordHash
+        userRoles: {
+          select: {
+            role: {
+              select: {
+                code: true,
+                rolePermissions: {
+                  select: {
+                    permission: {
+                      select: {
+                        code: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
@@ -278,10 +296,29 @@ export class AuthService {
       throw new UnauthorizedException('Người dùng không tồn tại.');
     }
 
+    const roles: string[] = [];
+    const permissionsSet = new Set<string>();
+
+    for (const ur of user.userRoles) {
+      roles.push(ur.role.code);
+      for (const rp of ur.role.rolePermissions) {
+        permissionsSet.add(rp.permission.code);
+      }
+    }
+
     return {
       statusCode: 200,
-      message: 'Lấy thông tin tài khoản thành công. ',
-      data: user,
+      message: 'Lấy thông tin tài khoản thành công.',
+      data: {
+        id: user.id,
+        email: user.email,
+        status: user.status,
+        mustChangePassword: user.mustChangePassword,
+        lastLoginAt: user.lastLoginAt,
+        createdAt: user.createdAt,
+        roles,
+        permissions: Array.from(permissionsSet),
+      },
     };
   }
 

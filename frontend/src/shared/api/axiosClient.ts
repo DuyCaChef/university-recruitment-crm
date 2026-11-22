@@ -81,6 +81,37 @@ axiosClient.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined;
     const status = error.response ? error.response.status : null;
+    const errorData = error.response?.data as
+      | { errorCode?: string; message?: string | string[] }
+      | undefined;
+
+    const rawMessage = Array.isArray(errorData?.message)
+      ? errorData.message.join(" ")
+      : errorData?.message || "";
+
+    // 0. Bắt mã lỗi 403 Forbidden (PASSWORD_CHANGE_REQUIRED) — Khóa phiên hạn chế
+    if (
+      status === 403 &&
+      (errorData?.errorCode === "PASSWORD_CHANGE_REQUIRED" ||
+        rawMessage.includes("PASSWORD_CHANGE_REQUIRED") ||
+        rawMessage.includes("bắt buộc đổi mật khẩu"))
+    ) {
+      try {
+        const rawUser = localStorage.getItem("user_info");
+        if (rawUser) {
+          const user = JSON.parse(rawUser);
+          user.mustChangePassword = true;
+          localStorage.setItem("user_info", JSON.stringify(user));
+        }
+      } catch {
+        // Bỏ qua lỗi parse JSON nếu localStorage bị hỏng
+      }
+
+      if (window.location.pathname !== "/change-password") {
+        window.location.href = "/change-password";
+      }
+      return Promise.reject(error);
+    }
 
     // Bỏ qua nếu không phải lỗi 401 hoặc không có cấu hình request gốc
     if (status !== 401 || !originalRequest) {
@@ -109,6 +140,7 @@ axiosClient.interceptors.response.use(
     // 2. Xử lý đồng thời (Concurrent Request Queue):
     // Nếu đang có 1 tiến trình gọi /auth/refresh chạy rồi -> Đưa request này vào hàng đợi
     if (isRefreshing) {
+      originalRequest._retry = true;
       return new Promise<string>((resolve, reject) => {
         failedQueue.push({ resolve, reject });
       })
@@ -156,3 +188,5 @@ axiosClient.interceptors.response.use(
     }
   },
 );
+
+export default axiosClient;
