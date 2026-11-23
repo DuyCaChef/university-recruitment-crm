@@ -1,5 +1,5 @@
 // src/features/auth/pages/CompanyRegisterPage.tsx
-import { useState, type ReactElement } from "react";
+import { useState, type ChangeEvent, type ReactElement } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
@@ -44,6 +44,7 @@ export const CompanyRegisterPage = (): ReactElement => {
   const [maxAccessibleStep, setMaxAccessibleStep] = useState<1 | 2 | 3>(1);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+  const [useSameEmail, setUseSameEmail] = useState<boolean>(false);
   const [registrationSuccessData, setRegistrationSuccessData] =
     useState<CompanyRegisterResponseData | null>(null);
 
@@ -53,6 +54,7 @@ export const CompanyRegisterPage = (): ReactElement => {
     trigger,
     control,
     setError,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<CompanyRegisterFormValues>({
     resolver: zodResolver(companyRegisterSchema),
@@ -74,6 +76,7 @@ export const CompanyRegisterPage = (): ReactElement => {
     },
   });
 
+  const accountEmailValue = useWatch({ control, name: "accountEmail" }) || "";
   const passwordValue = useWatch({ control, name: "password" }) || "";
   const confirmPasswordValue =
     useWatch({ control, name: "confirmPassword" }) || "";
@@ -88,6 +91,33 @@ export const CompanyRegisterPage = (): ReactElement => {
     },
   });
 
+  // Đồng bộ email công ty với email đăng nhập khi bật checkbox
+  const handleToggleSameEmail = (event: ChangeEvent<HTMLInputElement>): void => {
+    const checked = event.target.checked;
+    setUseSameEmail(checked);
+    if (checked) {
+      setValue("companyEmail", accountEmailValue.trim(), {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    }
+  };
+
+  // Tách register cho companyEmail để tự bỏ tick checkbox nếu người dùng sửa tay khác email Bước 1
+  const companyEmailField = register("companyEmail");
+  const handleCompanyEmailChange = (
+    event: ChangeEvent<HTMLInputElement>,
+  ): void => {
+    void companyEmailField.onChange(event);
+    if (
+      useSameEmail &&
+      event.target.value.trim().toLowerCase() !==
+      accountEmailValue.trim().toLowerCase()
+    ) {
+      setUseSameEmail(false);
+    }
+  };
+
   // Chuyển sang Bước 2 có thẩm định các trường Bước 1
   const handleProceedToStep2 = async (): Promise<void> => {
     const isStep1Valid = await trigger([
@@ -96,6 +126,11 @@ export const CompanyRegisterPage = (): ReactElement => {
       "confirmPassword",
     ]);
     if (isStep1Valid) {
+      if (useSameEmail) {
+        setValue("companyEmail", accountEmailValue.trim(), {
+          shouldValidate: true,
+        });
+      }
       setCurrentStep(2);
       setMaxAccessibleStep((prev) => (prev < 2 ? 2 : prev));
     }
@@ -249,7 +284,7 @@ export const CompanyRegisterPage = (): ReactElement => {
     );
   };
 
-  // Nếu đã đăng ký thành công, hiển thị màn hình Onboarding Verification Gate
+  // Nếu đã đăng ký thành công, hiển thị màn hình kết quả chờ xác thực
   if (registrationSuccessData) {
     return (
       <CompanyRegisterSuccessState
@@ -265,18 +300,19 @@ export const CompanyRegisterPage = (): ReactElement => {
     <div className="flex flex-col gap-6">
       {/* Tiêu đề & Giới thiệu trang */}
       <div className="flex flex-col items-center text-center gap-1.5">
-
         <h1 className="text-xl font-bold text-ink">
           Đăng ký tài khoản Doanh nghiệp
         </h1>
         <p className="text-small text-ink-2 max-w-lg">
-          Khởi tạo tài khoản tuyển dụng và đăng ký hồ sơ pháp nhân đối tác với
-          Trường Đại học An Giang trong một lần gửi biểu mẫu.
+          Hoàn tất 3 bước ngắn gọn để mở tài khoản tuyển dụng và kết nối sinh
+          viên Trường Đại học An Giang. Các trường có dấu{" "}
+          <span className="font-semibold text-danger-ink">(*)</span> là thông
+          tin bắt buộc.
         </p>
       </div>
 
       {/* Thanh tiến trình 3 bước (Stepper) */}
-      <div className="px-2">
+      <div className="px-0 md:px-2">
         <RegistrationStepper
           currentStep={currentStep}
           maxAccessibleStep={maxAccessibleStep}
@@ -309,20 +345,21 @@ export const CompanyRegisterPage = (): ReactElement => {
         className="flex flex-col gap-5"
       >
         {/* ================================================================= */}
-        {/* BƯỚC 1: THÔNG TIN TÀI KHOẢN ĐĂNG NHẬP (MODULE 01)                  */}
+        {/* BƯỚC 1: THIẾT LẬP TÀI KHOẢN ĐĂNG NHẬP                             */}
         {/* ================================================================= */}
         {currentStep === 1 && (
           <div className="flex flex-col gap-4 animate-fadeIn">
-            <div className="border-b border-line pb-2">
+            <div className="border-b border-line pb-2.5">
               <h2 className="text-body font-bold text-ink flex items-center gap-2">
                 <span className="flex h-5 w-5 items-center justify-center rounded-pill bg-brand-600 text-[11px] text-white">
                   1
                 </span>
-                Thông tin tài khoản đăng nhập (Module 01)
+                Thiết lập tài khoản đăng nhập
               </h2>
-              <p className="text-xs text-ink-3 mt-0.5">
-                Tài khoản này được sử dụng để đăng nhập vào hệ thống với vai trò
-                EMPLOYER.
+              <p className="text-xs text-ink-3 mt-1 leading-relaxed">
+                Tạo thông tin đăng nhập dành cho người phụ trách tuyển dụng. Tài
+                khoản này giúp bạn quản lý hồ sơ công ty, theo dõi tiến độ xét
+                duyệt và đăng tin tuyển dụng sau này.
               </p>
             </div>
 
@@ -330,11 +367,14 @@ export const CompanyRegisterPage = (): ReactElement => {
               id="register-account-email"
               type="email"
               label="Email đăng nhập *"
-              placeholder="VD: hr@congty.com"
+              placeholder="VD: tuyendung@congty.vn"
+              helperText="Dùng để đăng nhập và nhận thông báo hệ thống. Có thể dùng email công việc của bạn hoặc email chung của công ty."
               autoComplete="username"
               disabled={isFormPending}
               error={errors.accountEmail?.message}
-              rightElement={<Mail className="h-5 w-5 mr-2 text-ink-3" aria-hidden="true" />}
+              rightElement={
+                <Mail className="h-5 w-5 mr-2 text-ink-3" aria-hidden="true" />
+              }
               {...register("accountEmail")}
             />
 
@@ -367,7 +407,9 @@ export const CompanyRegisterPage = (): ReactElement => {
             {passwordValue.length > 0 && (
               <div className="rounded-input border border-line bg-subtle/50 p-3 flex flex-col gap-2 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-ink-2">Độ mạnh mật khẩu:</span>
+                  <span className="font-medium text-ink-2">
+                    Độ mạnh mật khẩu:
+                  </span>
                   <span
                     className={`font-semibold ${passwordStrength.strengthColor}`}
                   >
@@ -391,7 +433,7 @@ export const CompanyRegisterPage = (): ReactElement => {
                     ) : (
                       <div className="h-3.5 w-3.5 rounded-pill border border-line-strong shrink-0" />
                     )}
-                    <span>Chữ hoa & thường (Aa)</span>
+                    <span>Chữ hoa &amp; thường (Aa)</span>
                   </div>
 
                   <div className="flex items-center gap-1.5">
@@ -452,7 +494,7 @@ export const CompanyRegisterPage = (): ReactElement => {
                 onClick={() => void handleProceedToStep2()}
                 className="gap-2 font-semibold"
               >
-                <span>Tiếp tục: Thông tin doanh nghiệp</span>
+                <span>Tiếp tục</span>
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Button>
             </div>
@@ -460,99 +502,145 @@ export const CompanyRegisterPage = (): ReactElement => {
         )}
 
         {/* ================================================================= */}
-        {/* BƯỚC 2: THÔNG TIN PHÁP NHÂN DOANH NGHIỆP (MODULE 04)               */}
+        {/* BƯỚC 2: THÔNG TIN PHÁP NHÂN DOANH NGHIỆP                          */}
         {/* ================================================================= */}
         {currentStep === 2 && (
           <div className="flex flex-col gap-4 animate-fadeIn">
-            <div className="border-b border-line pb-2">
+            <div className="border-b border-line pb-2.5">
               <h2 className="text-body font-bold text-ink flex items-center gap-2">
                 <span className="flex h-5 w-5 items-center justify-center rounded-pill bg-brand-600 text-[11px] text-white">
                   2
                 </span>
-                Thông tin pháp nhân doanh nghiệp (Module 04)
+                Thông tin pháp nhân doanh nghiệp
               </h2>
-              <p className="text-xs text-ink-3 mt-0.5">
-                Khai báo thông tin định danh pháp nhân để Career Center tiến hành
-                thẩm định hồ sơ.
+              <p className="text-xs text-ink-3 mt-1 leading-relaxed">
+                Khai báo thông tin cơ bản của công ty để Trung tâm Hướng nghiệp
+                &amp; Hỗ trợ Sinh viên AGU xác minh tính chính danh và hiển thị
+                hồ sơ doanh nghiệp uy tín đến sinh viên.
               </p>
             </div>
 
+            {/* Nhóm 2.1: Thông tin định danh bắt buộc */}
             <Input
               id="register-company-name"
-              label="Tên doanh nghiệp / Đơn vị *"
+              label="Tên pháp nhân doanh nghiệp *"
               placeholder="VD: Công ty Cổ phần Công nghệ ABC An Giang"
+              helperText="Nhập đúng tên đầy đủ theo Giấy chứng nhận đăng ký doanh nghiệp để Nhà trường đối chiếu."
               disabled={isFormPending}
               error={errors.companyName?.message}
-              rightElement={<Building2 className="h-4 w-4 text-ink-3" aria-hidden="true" />}
+              rightElement={
+                <Building2 className="h-4 w-4 text-ink-3" aria-hidden="true" />
+              }
               {...register("companyName")}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
               <Input
                 id="register-company-email"
                 type="email"
-                label="Email liên hệ chính thức *"
+                label="Email chính thức của doanh nghiệp *"
                 placeholder="VD: contact@abc-tech.com"
+                helperText="Hiển thị trên hồ sơ đối tác để Nhà trường gửi công văn hoặc liên hệ hợp tác."
                 disabled={isFormPending}
                 error={errors.companyEmail?.message}
-                rightElement={<Mail className="h-4 w-4 text-ink-3" aria-hidden="true" />}
-                {...register("companyEmail")}
+                rightElement={
+                  <Mail className="h-4 w-4 text-ink-3" aria-hidden="true" />
+                }
+                {...companyEmailField}
+                onChange={handleCompanyEmailChange}
               />
 
-              <Input
-                id="register-tax-code"
-                className="font-mono"
-                label="Mã số thuế (Tùy chọn MVP)"
-                placeholder="VD: 1600123456 hoặc 1600123456-001"
-                disabled={isFormPending}
-                error={errors.taxCode?.message}
-                rightElement={<Hash className="h-4 w-4 text-ink-3" aria-hidden="true" />}
-                {...register("taxCode")}
-              />
+              <label className="inline-flex items-center gap-2 text-xs text-ink-2 cursor-pointer select-none w-fit">
+                <input
+                  type="checkbox"
+                  checked={useSameEmail}
+                  onChange={handleToggleSameEmail}
+                  disabled={isFormPending || !accountEmailValue.trim()}
+                  className="h-4 w-4 rounded border-line-strong text-brand-600 focus:ring-2 focus:ring-focus disabled:cursor-not-allowed disabled:opacity-50"
+                />
+                <span>
+                  Dùng giống email đăng nhập ở Bước 1
+                  {accountEmailValue.trim()
+                    ? ` (${accountEmailValue.trim()})`
+                    : ""}
+                </span>
+              </label>
+            </div>
+
+            {/* Đường phân tách sang nhóm thông tin bổ sung (Tùy chọn) */}
+            <div className="flex items-center gap-3 pt-1">
+              <div className="h-px flex-1 bg-line" aria-hidden="true" />
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">
+                Thông tin bổ sung (Có thể cập nhật sau)
+              </span>
+              <div className="h-px flex-1 bg-line" aria-hidden="true" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                id="register-company-phone"
-                type="tel"
-                label="Số điện thoại doanh nghiệp"
-                placeholder="VD: 0296 3841 123"
+                id="register-tax-code"
+                className="font-mono"
+                label="Mã số thuế"
+                placeholder="VD: 1600123456 hoặc 1600123456-001"
+                helperText="Gồm 10 hoặc 13 chữ số. Giúp hồ sơ được xét duyệt nhanh hơn."
                 disabled={isFormPending}
-                error={errors.companyPhone?.message}
-                rightElement={<Phone className="h-4 w-4 text-ink-3" aria-hidden="true" />}
-                {...register("companyPhone")}
+                error={errors.taxCode?.message}
+                rightElement={
+                  <Hash className="h-4 w-4 text-ink-3" aria-hidden="true" />
+                }
+                {...register("taxCode")}
               />
 
               <Input
-                id="register-company-website"
-                type="url"
-                label="Website công ty"
-                placeholder="VD: https://congty.com"
+                id="register-company-phone"
+                type="tel"
+                label="Số điện thoại tổng đài"
+                placeholder="VD: 0296 3841 123"
+                helperText="Số điện thoại bàn hoặc hotline chính thức của doanh nghiệp."
                 disabled={isFormPending}
-                error={errors.website?.message}
-                rightElement={<Globe className="h-4 w-4 text-ink-3" aria-hidden="true" />}
-                {...register("website")}
+                error={errors.companyPhone?.message}
+                rightElement={
+                  <Phone className="h-4 w-4 text-ink-3" aria-hidden="true" />
+                }
+                {...register("companyPhone")}
               />
             </div>
 
             <Input
+              id="register-company-website"
+              type="url"
+              label="Website doanh nghiệp"
+              placeholder="VD: https://congty.com"
+              helperText="Trang web chính thức hoặc trang giới thiệu doanh nghiệp."
+              disabled={isFormPending}
+              error={errors.website?.message}
+              rightElement={
+                <Globe className="h-4 w-4 text-ink-3" aria-hidden="true" />
+              }
+              {...register("website")}
+            />
+
+            <Input
               id="register-company-address"
-              label="Địa chỉ trụ sở chính / Chi nhánh"
+              label="Địa chỉ trụ sở / Chi nhánh"
               placeholder="VD: 18 Ung Văn Khiêm, P. Đông Xuyên, TP. Long Xuyên, An Giang"
+              helperText="Địa chỉ nơi làm việc chính hoặc chi nhánh tuyển dụng sinh viên."
               disabled={isFormPending}
               error={errors.address?.message}
-              rightElement={<MapPin className="h-4 w-4 text-ink-3" aria-hidden="true" />}
+              rightElement={
+                <MapPin className="h-4 w-4 text-ink-3" aria-hidden="true" />
+              }
               {...register("address")}
             />
 
             <Textarea
               id="register-company-description"
-              label="Giới thiệu sơ lược về doanh nghiệp (Tùy chọn)"
+              label="Giới thiệu sơ lược về doanh nghiệp"
               placeholder="Mô tả ngắn gọn về lĩnh vực hoạt động, quy mô nhân sự, nhu cầu tuyển dụng sinh viên AGU..."
               rows={3}
               disabled={isFormPending}
               error={errors.description?.message}
-              helperText="Tối đa 1000 ký tự. Có thể chỉnh sửa chi tiết sau trong mục Hồ sơ doanh nghiệp."
+              helperText="Tối đa 1000 ký tự. Có thể chỉnh sửa chi tiết và tải logo sau trong mục Hồ sơ doanh nghiệp."
               {...register("description")}
             />
 
@@ -575,7 +663,7 @@ export const CompanyRegisterPage = (): ReactElement => {
                 onClick={() => void handleProceedToStep3()}
                 className="gap-2 font-semibold"
               >
-                <span>Tiếp tục: Người đại diện</span>
+                <span>Tiếp tục</span>
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Button>
             </div>
@@ -583,20 +671,21 @@ export const CompanyRegisterPage = (): ReactElement => {
         )}
 
         {/* ================================================================= */}
-        {/* BƯỚC 3: NGƯỜI ĐẠI DIỆN ĐĂNG KÝ & XÁC NHẬN GỬI FORM (MODULE 04/05)  */}
+        {/* BƯỚC 3: NGƯỜI ĐẠI DIỆN LIÊN HỆ & HOÀN TẤT                         */}
         {/* ================================================================= */}
         {currentStep === 3 && (
           <div className="flex flex-col gap-4 animate-fadeIn">
-            <div className="border-b border-line pb-2">
+            <div className="border-b border-line pb-2.5">
               <h2 className="text-body font-bold text-ink flex items-center gap-2">
                 <span className="flex h-5 w-5 items-center justify-center rounded-pill bg-brand-600 text-[11px] text-white">
                   3
                 </span>
-                Thông tin người đại diện & Xác nhận (Module 04 & 05)
+                Người đại diện liên hệ &amp; Hoàn tất
               </h2>
-              <p className="text-xs text-ink-3 mt-0.5">
-                Thiết lập quyền sở hữu ban đầu (Primary Contact) làm đầu mối liên
-                hệ trực tiếp với Career Center.
+              <p className="text-xs text-ink-3 mt-1 leading-relaxed">
+                Cung cấp thông tin người trực tiếp phụ trách tuyển dụng để Nhà
+                trường liên hệ nhanh khi cần xác minh hồ sơ hoặc phối hợp các
+                hoạt động tuyển dụng, ngày hội việc làm.
               </p>
             </div>
 
@@ -604,47 +693,66 @@ export const CompanyRegisterPage = (): ReactElement => {
               id="register-rep-name"
               label="Họ và tên người đại diện *"
               placeholder="VD: Nguyễn Văn An"
+              helperText="Người trực tiếp phụ trách tuyển dụng và làm việc với Nhà trường."
               disabled={isFormPending}
               error={errors.representativeName?.message}
-              rightElement={<User className="h-4 w-4 text-ink-3" aria-hidden="true" />}
+              rightElement={
+                <User className="h-4 w-4 text-ink-3" aria-hidden="true" />
+              }
               {...register("representativeName")}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 id="register-rep-position"
-                label="Chức vụ (Tùy chọn)"
-                placeholder="VD: Trưởng phòng Nhân sự / Recruiter"
+                label="Chức vụ / Bộ phận"
+                placeholder="VD: Chuyên viên Nhân sự (HR)"
+                helperText="Vai trò hoặc phòng ban của bạn tại doanh nghiệp."
                 disabled={isFormPending}
                 error={errors.representativePosition?.message}
-                rightElement={<Briefcase className="h-4 w-4 text-ink-3" aria-hidden="true" />}
+                rightElement={
+                  <Briefcase
+                    className="h-4 w-4 text-ink-3"
+                    aria-hidden="true"
+                  />
+                }
                 {...register("representativePosition")}
               />
 
               <Input
                 id="register-rep-phone"
                 type="tel"
-                label="Số điện thoại người đại diện"
+                label="Số điện thoại di động"
                 placeholder="VD: 0912 345 678"
+                helperText="Số điện thoại trực tiếp để cán bộ trường gọi xác minh nhanh khi cần."
                 disabled={isFormPending}
                 error={errors.representativePhone?.message}
-                rightElement={<Phone className="h-4 w-4 text-ink-3" aria-hidden="true" />}
+                rightElement={
+                  <Phone className="h-4 w-4 text-ink-3" aria-hidden="true" />
+                }
                 {...register("representativePhone")}
               />
             </div>
 
-            {/* Thẻ cam kết & tóm tắt Onboarding Gate */}
-            <div className="rounded-card border border-brand-200 bg-brand-50/70 p-4 space-y-2.5 text-xs text-ink-2">
-              <div className="flex items-center gap-2 text-brand-700 font-bold">
+            {/* Thẻ cam kết & tóm tắt quy trình xét duyệt */}
+            <div className="rounded-card border border-brand-200 bg-brand-50/70 p-4 space-y-2 text-xs text-ink-2">
+              <div className="flex text-base items-center gap-2 text-brand-700 font-bold">
                 <HelpCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>Quy định xác thực hồ sơ & Cam kết tuyển dụng</span>
+                <span>Quy định xác thực hồ sơ &amp; Cam kết tuyển dụng</span>
               </div>
               <p className="leading-relaxed">
-                Sau khi gửi thành công, doanh nghiệp sẽ được cấp trạng thái{" "}
-                <strong className="text-brand-700 font-semibold">PENDING</strong>.
-                Hệ thống tự động liên kết tài khoản này làm đại diện pháp nhân
-                chính (Primary Contact). Chức năng đăng tuyển sẽ được mở khóa ngay
-                khi Ban Giám đốc Trung tâm Hướng nghiệp & HTSV phê duyệt.
+                Sau khi đăng ký thành công, hồ sơ doanh nghiệp sẽ chuyển sang
+                trạng thái{" "}
+                <strong className="text-brand-700 font-semibold">
+                  Chờ xác thực
+                </strong>{" "}
+                và tài khoản của bạn được ghi nhận là{" "}
+                <strong className="text-ink font-semibold">
+                  người đại diện liên hệ chính thức
+                </strong>
+                . Chức năng đăng tin tuyển dụng sẽ được mở khóa ngay sau khi
+                Trung tâm Hướng nghiệp &amp; Hỗ trợ Sinh viên Trường Đại học An
+                Giang kiểm tra và phê duyệt hồ sơ.
               </p>
             </div>
 
@@ -669,7 +777,7 @@ export const CompanyRegisterPage = (): ReactElement => {
                 disabled={isFormPending}
                 className="gap-2 font-semibold shadow-md px-6 flex-1 md:flex-initial"
               >
-                <span>Đăng ký tài khoản Doanh nghiệp</span>
+                <span>Đăng ký</span>
                 <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
               </Button>
             </div>

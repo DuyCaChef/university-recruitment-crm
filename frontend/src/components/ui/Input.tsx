@@ -74,7 +74,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
     return (
       <div className={cn(FIELD_CONTAINER_CLASS, containerClassName)}>
-        <label htmlFor={inputId} className={FIELD_LABEL_CLASS}>
+        <label
+          htmlFor={inputId}
+          className={FIELD_LABEL_CLASS}
+          title={label}
+        >
           {label}
         </label>
 

@@ -23,7 +23,8 @@ export const FIELD_BORDER_ERROR =
   "border-danger-border focus:border-danger-border focus:ring-4 focus:ring-danger-bg";
 
 /** Nhãn form tiêu chuẩn */
-export const FIELD_LABEL_CLASS = "text-small font-medium text-ink select-none";
+export const FIELD_LABEL_CLASS =
+  "text-small font-medium text-ink select-none truncate block";
 
 /** Container bao bọc form control */
 export const FIELD_CONTAINER_CLASS = "flex flex-col gap-1.5";

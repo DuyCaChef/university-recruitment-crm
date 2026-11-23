@@ -15,6 +15,17 @@ export default {
         sans: ['"Be Vietnam Pro"', "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ['"JetBrains Mono"', "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
+      fontSize: {
+        display: ["2.5rem", { lineHeight: "3rem", fontWeight: "800" }],
+        h1: ["2rem", { lineHeight: "2.5rem", fontWeight: "800" }],
+        h2: ["1.625rem", { lineHeight: "2.125rem", fontWeight: "700" }],
+        h3: ["1.25rem", { lineHeight: "1.75rem", fontWeight: "700" }],
+        "body-lg": ["1.0625rem", { lineHeight: "1.625rem", fontWeight: "400" }],
+        body: ["1rem", { lineHeight: "1.5rem", fontWeight: "400" }],
+        small: ["0.875rem", { lineHeight: "1.25rem", fontWeight: "500" }],
+        caption: ["0.75rem", { lineHeight: "1rem", fontWeight: "600" }],
+        mono: ["0.875rem", { lineHeight: "1.25rem", fontWeight: "500" }],
+      },
       colors: {
         // Brand (Teal)
         brand: {

@@ -6,6 +6,7 @@ import { cn } from "@/shared/lib/cn";
 export interface StepItem {
   id: 1 | 2 | 3;
   title: string;
+  shortTitle: string;
   subtitle: string;
   icon: typeof KeyRound;
 }
@@ -14,18 +15,21 @@ const STEPS: StepItem[] = [
   {
     id: 1,
     title: "Tài khoản",
+    shortTitle: "Tài khoản",
     subtitle: "Thông tin đăng nhập",
     icon: KeyRound,
   },
   {
     id: 2,
     title: "Doanh nghiệp",
+    shortTitle: "Doanh nghiệp",
     subtitle: "Pháp nhân & Liên hệ",
     icon: Building2,
   },
   {
     id: 3,
     title: "Người đại diện",
+    shortTitle: "Đại diện",
     subtitle: "Chức vụ & Xác nhận",
     icon: UserCog,
   },
@@ -45,12 +49,12 @@ export const RegistrationStepper = ({
   return (
     <nav
       aria-label="Tiến trình đăng ký tài khoản Doanh nghiệp"
-      className="w-full"
+      className="w-full select-none"
     >
-      <ol className="relative flex items-center justify-between">
-        {/* Đường nối thanh tiến trình */}
+      <ol className="relative flex items-start justify-between">
+        {/* Đường nối thanh tiến trình: Nối chính xác tâm của vòng tròn 1 (16.667%) đến tâm vòng tròn 3 (83.333%) */}
         <div
-          className="absolute left-6 right-6 top-5 -z-0 h-0.5 bg-line"
+          className="absolute left-[16.667%] right-[16.667%] top-6 -translate-y-1/2 -z-0 h-0.5 bg-line pointer-events-none"
           aria-hidden="true"
         >
           <div
@@ -79,7 +83,7 @@ export const RegistrationStepper = ({
                 disabled={!isClickable}
                 aria-current={isCurrent ? "step" : undefined}
                 className={cn(
-                  "group flex flex-col items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus rounded-input p-1 transition-all",
+                  "group flex flex-col items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus rounded-input p-1 transition-all w-full",
                   isClickable
                     ? "cursor-pointer"
                     : "cursor-not-allowed opacity-75",
@@ -88,7 +92,7 @@ export const RegistrationStepper = ({
                 {/* Vòng tròn biểu tượng bước */}
                 <div
                   className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-pill border-2 transition-all duration-200",
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-pill border-2 transition-all duration-200",
                     isCurrent &&
                       "border-brand-600 bg-brand-600 text-white shadow-sm ring-4 ring-brand-100",
                     isCompleted &&
@@ -99,9 +103,9 @@ export const RegistrationStepper = ({
                   )}
                 >
                   {isCompleted ? (
-                    <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
+                    <Check className="h-5 w-5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
                   ) : (
-                    <StepIcon className="h-4 w-4" aria-hidden="true" />
+                    <StepIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
                   )}
                 </div>
 
@@ -109,13 +113,14 @@ export const RegistrationStepper = ({
                 <div className="flex flex-col items-center text-center">
                   <span
                     className={cn(
-                      "text-xs font-semibold transition-colors",
+                      "text-[11px] md:text-xs font-semibold whitespace-nowrap transition-colors",
                       isCurrent && "text-brand-600",
                       isCompleted && "text-ink",
                       !isCurrent && !isCompleted && "text-ink-3",
                     )}
                   >
-                    {step.title}
+                    <span className="inline md:hidden">{step.shortTitle}</span>
+                    <span className="hidden md:inline">{step.title}</span>
                   </span>
                   <span className="hidden md:inline text-[11px] text-ink-3">
                     {step.subtitle}

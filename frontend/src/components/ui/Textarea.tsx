@@ -73,7 +73,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 
     return (
       <div className={cn(FIELD_CONTAINER_CLASS, containerClassName)}>
-        <label htmlFor={textareaId} className={FIELD_LABEL_CLASS}>
+        <label
+          htmlFor={textareaId}
+          className={FIELD_LABEL_CLASS}
+          title={label}
+        >
           {label}
         </label>
 
