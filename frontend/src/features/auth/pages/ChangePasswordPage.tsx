@@ -37,13 +37,13 @@ import {
   getStoredUser,
   getDefaultRouteByRole,
 } from "../utils/authSession";
-import type { ApiErrorPayload, UserRole } from "../types";
+import type { ApiErrorPayload, RoleCode } from "../types";
 
-const ROLE_NAME_MAP: Record<UserRole, string> = {
+const ROLE_NAME_MAP: Record<RoleCode, string> = {
   STUDENT: "Sinh viên",
   EMPLOYER: "Doanh nghiệp",
   CAREER_CENTER: "Cán bộ Career Center",
-  SYSTEM_ADMIN: "Quản trị viên",
+  ADMIN: "Quản trị viên",
 };
 
 export default function ChangePasswordPage(): ReactElement {
@@ -51,12 +51,10 @@ export default function ChangePasswordPage(): ReactElement {
   const queryClient = useQueryClient();
   const errorSummaryRef = useRef<HTMLDivElement>(null);
 
-  // Trạng thái hiển thị mật khẩu độc lập cho từng ô nhập
   const [showCurrentPassword, setShowCurrentPassword] = useState<boolean>(false);
   const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
 
-  // Trạng thái gửi biểu mẫu và thông báo lỗi server
   const [serverError, setServerError] = useState<{
     code?: string;
     message: string;
@@ -64,7 +62,6 @@ export default function ChangePasswordPage(): ReactElement {
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
 
-  // Đọc thông tin tài khoản hiện tại từ phiên
   const currentUser = getStoredUser();
 
   const {
@@ -82,7 +79,6 @@ export default function ChangePasswordPage(): ReactElement {
     },
   });
 
-  // Theo dõi giá trị realtime bằng useWatch (tương thích React Compiler và memoization)
   const currentPasswordVal = useWatch({ control, name: "currentPassword" }) || "";
   const newPasswordVal = useWatch({ control, name: "newPassword" }) || "";
   const confirmPasswordVal = useWatch({ control, name: "confirmPassword" }) || "";
@@ -93,7 +89,6 @@ export default function ChangePasswordPage(): ReactElement {
     confirmPasswordVal,
   );
 
-  // Tự động focus vào Error Summary khi submit gặp lỗi (WCAG 2.2 Form Accessibility)
   useEffect(() => {
     if (serverError && errorSummaryRef.current) {
       errorSummaryRef.current.focus();
@@ -104,14 +99,12 @@ export default function ChangePasswordPage(): ReactElement {
     setServerError(null);
 
     try {
-      // 1. Gửi request đổi mật khẩu — Backend thực thi câu lệnh nguyên tử
       await changePassword({
         currentPassword: values.currentPassword,
         newPassword: values.newPassword,
         confirmPassword: values.confirmPassword,
       });
 
-      // 2. Cập nhật cờ mustChangePassword = false trong phiên cục bộ
       if (currentUser) {
         const updatedUser = {
           ...currentUser,
@@ -121,10 +114,8 @@ export default function ChangePasswordPage(): ReactElement {
         queryClient.setQueryData(authKeys.currentUser(), updatedUser);
       }
 
-      // 3. Hiển thị màn hình thành công & mở khóa quyền hạn
       setIsSuccess(true);
 
-      // 4. Tự động chuyển hướng vào không gian làm việc chính sau 1.5 giây
       const targetRoute = getDefaultRouteByRole(currentUser?.roles);
       setTimeout(() => {
         navigate(targetRoute, { replace: true });
@@ -135,7 +126,6 @@ export default function ChangePasswordPage(): ReactElement {
         const data = err.response?.data;
         const errorCode = data?.errorCode;
 
-        // Xử lý xung đột cập nhật đồng thời (HTTP 409 Conflict)
         if (status === 409) {
           setServerError({
             code: "CONFLICT",
@@ -145,7 +135,6 @@ export default function ChangePasswordPage(): ReactElement {
           return;
         }
 
-        // Xử lý sai mật khẩu cũ hoặc không hợp lệ (HTTP 400 Bad Request)
         if (status === 400) {
           const rawMsg = data?.message;
           const msg =
@@ -158,7 +147,6 @@ export default function ChangePasswordPage(): ReactElement {
           return;
         }
 
-        // Xử lý phiên làm việc hết hạn (HTTP 401)
         if (status === 401) {
           setServerError({
             code: "UNAUTHORIZED",
@@ -167,7 +155,6 @@ export default function ChangePasswordPage(): ReactElement {
           return;
         }
 
-        // Xử lý lỗi cấm quyền (HTTP 403)
         if (status === 403) {
           setServerError({
             code: "FORBIDDEN",
@@ -192,7 +179,7 @@ export default function ChangePasswordPage(): ReactElement {
     try {
       await logout();
     } catch {
-      // bỏ qua lỗi mạng khi logout
+      // Bỏ qua lỗi mạng khi đăng xuất
     } finally {
       localStorage.removeItem("access_token");
       localStorage.removeItem("user_info");
@@ -201,7 +188,7 @@ export default function ChangePasswordPage(): ReactElement {
     }
   };
 
-  // ── Màn hình thành công (Atomic Update Success State) ────────────────
+  // ── Màn hình thành công sau khi đổi mật khẩu ─────────────────────────
   if (isSuccess) {
     const targetRoute = getDefaultRouteByRole(currentUser?.roles);
     return (
@@ -209,7 +196,7 @@ export default function ChangePasswordPage(): ReactElement {
         aria-labelledby="success-heading"
         className="flex flex-col items-center text-center gap-6 py-2"
       >
-        <div className="flex h-16 w-16 items-center justify-center rounded-panel bg-success-bg text-success-ink border border-success-border animate-in zoom-in-95 duration-200">
+        <div className="flex h-16 w-16 items-center justify-center rounded-panel bg-success-bg text-success-ink border border-success-border">
           <ShieldCheck className="h-9 w-9" aria-hidden="true" />
         </div>
 
@@ -230,11 +217,11 @@ export default function ChangePasswordPage(): ReactElement {
         <div className="w-full rounded-card bg-subtle p-4 text-left border border-line flex flex-col gap-2 text-xs text-ink-2">
           <div className="flex items-center gap-2 text-ink font-semibold">
             <Check className="h-4 w-4 text-success-ink shrink-0" aria-hidden="true" />
-            <span>Hạ cờ must_change_password thành công</span>
+            <span>Đã gỡ trạng thái yêu cầu đổi mật khẩu lần đầu</span>
           </div>
           <div className="flex items-center gap-2 text-ink font-semibold">
             <Check className="h-4 w-4 text-success-ink shrink-0" aria-hidden="true" />
-            <span>Ghi nhận nhật ký kiểm toán hệ thống (AUTH_PASSWORD_CHANGE)</span>
+            <span>Ghi nhận nhật ký bảo mật tài khoản</span>
           </div>
         </div>
 
@@ -273,7 +260,7 @@ export default function ChangePasswordPage(): ReactElement {
       aria-labelledby="change-password-heading"
       className="flex flex-col gap-6"
     >
-      {/* ── 1. Header & Tiêu đề biểu mẫu ─────────────────────────────── */}
+      {/* 1. Header & Tiêu đề biểu mẫu */}
       <div className="flex flex-col items-center text-center gap-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-panel bg-brand-50 text-brand-600 border border-brand-200">
           <KeyRound className="h-6 w-6" aria-hidden="true" />
@@ -293,7 +280,7 @@ export default function ChangePasswordPage(): ReactElement {
         </div>
       </div>
 
-      {/* ── 2. Thẻ nhận diện người dùng đang đăng nhập ─────────────────── */}
+      {/* 2. Thẻ nhận diện người dùng đang đăng nhập */}
       <div className="flex items-center justify-between rounded-card border border-line bg-subtle p-3.5">
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-button bg-brand-100 text-brand-700">
@@ -313,7 +300,7 @@ export default function ChangePasswordPage(): ReactElement {
         </Badge>
       </div>
 
-      {/* ── 3. Cảnh báo Phiên hạn chế ─────────────────────────────────── */}
+      {/* 3. Cảnh báo Phiên hạn chế */}
       <Alert
         variant="info"
         title="Thông báo phiên làm việc hạn chế"
@@ -324,7 +311,7 @@ export default function ChangePasswordPage(): ReactElement {
         thiết bị khác sẽ tự động được thu hồi.
       </Alert>
 
-      {/* ── 4. Error Summary (Hộp báo lỗi tập trung, focusable) ───────── */}
+      {/* 4. Error Summary */}
       {serverError && (
         <div
           ref={errorSummaryRef}
@@ -348,18 +335,17 @@ export default function ChangePasswordPage(): ReactElement {
         </div>
       )}
 
-      {/* ── 5. Biểu mẫu đổi mật khẩu ──────────────────────────────────── */}
+      {/* 5. Biểu mẫu đổi mật khẩu */}
       <form
         onSubmit={handleSubmit(onSubmit)}
         noValidate
         className="flex flex-col gap-4"
       >
-        {/* Trường 1: Mật khẩu hiện tại (Mật khẩu tạm) */}
+        {/* Trường 1: Mật khẩu hiện tại */}
         <Input
-          className="text-sm"
           id="current-password"
           type={showCurrentPassword ? "text" : "password"}
-          label="Mật khẩu tạm thời hiện tại"
+          label="Mật khẩu tạm thời hiện tại *"
           placeholder="Nhập mật khẩu tạm bạn vừa đăng nhập..."
           autoComplete="current-password"
           disabled={isSubmitting}
@@ -393,11 +379,10 @@ export default function ChangePasswordPage(): ReactElement {
         {/* Trường 2: Mật khẩu mới */}
         <div className="flex flex-col gap-2">
           <Input
-            className="text-sm"
             id="new-password"
             type={showNewPassword ? "text" : "password"}
-            label="Mật khẩu mới"
-            placeholder="Tối thiểu 6 ký tự, gồm chữ hoa, thường & số..."
+            label="Mật khẩu mới *"
+            placeholder="Tối thiểu 8 ký tự, gồm chữ hoa, thường, số & ký tự đặc biệt..."
             autoComplete="new-password"
             disabled={isSubmitting}
             error={
@@ -425,7 +410,7 @@ export default function ChangePasswordPage(): ReactElement {
             {...register("newPassword")}
           />
 
-          {/* Thanh đo độ mạnh mật khẩu (Strength Meter) */}
+          {/* Thanh đo độ mạnh mật khẩu 4 mức */}
           {newPasswordVal.length > 0 && (
             <div className="flex flex-col gap-1.5 pt-1">
               <div className="flex items-center justify-between text-xs">
@@ -435,44 +420,32 @@ export default function ChangePasswordPage(): ReactElement {
                 </span>
               </div>
               <div
-                className="grid grid-cols-3 gap-1.5 h-1.5 w-full"
+                className="grid grid-cols-4 gap-1.5 h-1.5 w-full"
                 aria-hidden="true"
               >
-                <div
-                  className={`rounded-full transition-colors duration-150 ${
-                    criteria.score >= 1
-                      ? criteria.score === 1
-                        ? "bg-danger"
-                        : criteria.score === 2
-                          ? "bg-warning"
-                          : "bg-success"
-                      : "bg-line"
-                  }`}
-                />
-                <div
-                  className={`rounded-full transition-colors duration-150 ${
-                    criteria.score >= 2
-                      ? criteria.score === 2
-                        ? "bg-warning"
-                        : "bg-success"
-                      : "bg-line"
-                  }`}
-                />
-                <div
-                  className={`rounded-full transition-colors duration-150 ${
-                    criteria.score >= 3 ? "bg-success" : "bg-line"
-                  }`}
-                />
+                {[1, 2, 3, 4].map((level) => (
+                  <div
+                    key={level}
+                    className={`rounded-pill transition-colors duration-150 ${criteria.score >= level
+                        ? criteria.score <= 1
+                          ? "bg-danger"
+                          : criteria.score <= 3
+                            ? "bg-warning"
+                            : "bg-success"
+                        : "bg-line"
+                      }`}
+                  />
+                ))}
               </div>
             </div>
           )}
 
-          {/* Danh sách tiêu chí kiểm tra trực tiếp (Live Criteria Checklist) */}
+          {/* Danh sách 5 tiêu chí kiểm tra trực tiếp (Đồng bộ 100% với trang Đăng ký) */}
           <div className="rounded-input bg-canvas/70 p-3 border border-line">
             <span className="block text-caption font-bold text-ink-2 uppercase tracking-wider mb-2">
               Yêu cầu mật khẩu an toàn:
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
               <div className="flex items-center gap-1.5">
                 {criteria.hasMinLength ? (
                   <Check className="h-4 w-4 text-success-ink shrink-0" aria-hidden="true" />
@@ -484,7 +457,7 @@ export default function ChangePasswordPage(): ReactElement {
                     criteria.hasMinLength ? "text-ink font-medium" : "text-ink-3"
                   }
                 >
-                  Ít nhất 6 ký tự
+                  Tối thiểu 8 ký tự
                 </span>
               </div>
 
@@ -499,7 +472,7 @@ export default function ChangePasswordPage(): ReactElement {
                     criteria.hasUpperAndLower ? "text-ink font-medium" : "text-ink-3"
                   }
                 >
-                  Chữ hoa &amp; chữ thường
+                  Chữ hoa &amp; chữ thường (Aa)
                 </span>
               </div>
 
@@ -514,11 +487,26 @@ export default function ChangePasswordPage(): ReactElement {
                     criteria.hasNumber ? "text-ink font-medium" : "text-ink-3"
                   }
                 >
-                  Chứa ít nhất 1 số (0-9)
+                  Ít nhất 1 chữ số (0-9)
                 </span>
               </div>
 
               <div className="flex items-center gap-1.5">
+                {criteria.hasSpecialChar ? (
+                  <Check className="h-4 w-4 text-success-ink shrink-0" aria-hidden="true" />
+                ) : (
+                  <X className="h-4 w-4 text-ink-3 shrink-0" aria-hidden="true" />
+                )}
+                <span
+                  className={
+                    criteria.hasSpecialChar ? "text-ink font-medium" : "text-ink-3"
+                  }
+                >
+                  Ký tự đặc biệt (!@#$...)
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 md:col-span-2">
                 {criteria.isDifferentFromCurrent ? (
                   <Check className="h-4 w-4 text-success-ink shrink-0" aria-hidden="true" />
                 ) : (
@@ -531,7 +519,7 @@ export default function ChangePasswordPage(): ReactElement {
                       : "text-danger-ink font-medium"
                   }
                 >
-                  Khác mật khẩu tạm thời
+                  Khác mật khẩu tạm thời hiện tại
                 </span>
               </div>
             </div>
@@ -541,10 +529,9 @@ export default function ChangePasswordPage(): ReactElement {
         {/* Trường 3: Xác nhận mật khẩu mới */}
         <div className="flex flex-col gap-1.5">
           <Input
-            className="text-sm"
             id="confirm-password"
             type={showConfirmPassword ? "text" : "password"}
-            label="Xác nhận lại mật khẩu mới"
+            label="Xác nhận lại mật khẩu mới *"
             placeholder="Nhập lại chính xác mật khẩu mới..."
             autoComplete="new-password"
             disabled={isSubmitting}
@@ -575,12 +562,10 @@ export default function ChangePasswordPage(): ReactElement {
             {...register("confirmPassword")}
           />
 
-          {/* Phản hồi trạng thái trùng khớp realtime */}
           {confirmPasswordVal.length > 0 && (
             <p
-              className={`flex items-center gap-1.5 text-xs ${
-                criteria.isMatchConfirm ? "text-success-ink" : "text-ink-3"
-              }`}
+              className={`flex items-center gap-1.5 text-xs ${criteria.isMatchConfirm ? "text-success-ink" : "text-ink-3"
+                }`}
             >
               {criteria.isMatchConfirm ? (
                 <>
@@ -597,7 +582,7 @@ export default function ChangePasswordPage(): ReactElement {
           )}
         </div>
 
-        {/* ── Nút Submit ─────────────────────────────────────────────── */}
+        {/* Nút Submit */}
         <div className="pt-2 flex flex-col gap-3">
           <Button
             type="submit"
@@ -612,7 +597,6 @@ export default function ChangePasswordPage(): ReactElement {
             <span>Cập nhật mật khẩu &amp; Mở khóa</span>
           </Button>
 
-          {/* Nút Đăng xuất an toàn ở chân form */}
           <div className="flex items-center justify-center pt-1">
             <button
               type="button"

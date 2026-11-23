@@ -2,6 +2,7 @@
 import {
   forwardRef,
   useEffect,
+  useId,
   useState,
   type ChangeEventHandler,
   type InputHTMLAttributes,
@@ -9,11 +10,22 @@ import {
 } from "react";
 import { AlertCircle } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
+import {
+  FIELD_BASE_CLASS,
+  FIELD_BORDER_DEFAULT,
+  FIELD_BORDER_ERROR,
+  FIELD_CONTAINER_CLASS,
+  FIELD_ERROR_MESSAGE_CLASS,
+  FIELD_HELPER_TEXT_CLASS,
+  FIELD_LABEL_CLASS,
+} from "./fieldStyles";
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  id: string;
+  id?: string;
   label: string;
   error?: string;
+  helperText?: string;
+  containerClassName?: string;
   rightElement?: ReactNode;
 }
 
@@ -23,6 +35,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       id,
       label,
       error,
+      helperText,
+      containerClassName,
       rightElement,
       className,
       value,
@@ -32,7 +46,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     },
     ref,
   ) => {
-    const errorId = error ? `${id}-error` : undefined;
+    const generatedId = useId();
+    const inputId = id || generatedId;
+    const errorId = error ? `${inputId}-error` : undefined;
+    const helperId = helperText ? `${inputId}-helper` : undefined;
+    const describedBy =
+      [error ? errorId : null, !error && helperText ? helperId : null]
+        .filter(Boolean)
+        .join(" ") || undefined;
+
     const [isEmpty, setIsEmpty] = useState<boolean>(
       () => String(value ?? defaultValue ?? "").trim().length === 0,
     );
@@ -51,25 +73,21 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const shouldShowErrorBorder = Boolean(error) && !isEmpty;
 
     return (
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor={id} className="text-small font-medium text-ink">
+      <div className={cn(FIELD_CONTAINER_CLASS, containerClassName)}>
+        <label htmlFor={inputId} className={FIELD_LABEL_CLASS}>
           {label}
         </label>
 
         <div className="relative flex items-center">
           <input
             ref={ref}
-            id={id}
+            id={inputId}
             aria-invalid={Boolean(error)}
-            aria-describedby={errorId}
+            aria-describedby={describedBy}
             className={cn(
-              "h-11 w-full rounded-input border bg-surface px-3.5 text-body text-ink placeholder:text-ink-3 transition-all duration-150",
-              "hover:border-brand-400",
-              "focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-100",
-              "disabled:cursor-not-allowed disabled:bg-subtle disabled:text-ink-3",
-              shouldShowErrorBorder
-                ? "border-2 border-danger-border focus:border-danger-border focus:ring-4 focus:ring-danger-bg"
-                : "border-2 border-line-strong",
+              FIELD_BASE_CLASS,
+              "h-11",
+              shouldShowErrorBorder ? FIELD_BORDER_ERROR : FIELD_BORDER_DEFAULT,
               rightElement ? "pr-11" : "",
               className,
             )}
@@ -79,23 +97,25 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {rightElement && (
-            <div className="absolute right-1.5 flex items-center">
+            <div className="absolute right-1.5 flex items-center pointer-events-auto">
               {rightElement}
             </div>
           )}
         </div>
 
         {error && (
-          <p
-            id={errorId}
-            role="alert"
-            className="flex items-start gap-1.5 text-xs text-danger-ink"
-          >
+          <p id={errorId} role="alert" className={FIELD_ERROR_MESSAGE_CLASS}>
             <AlertCircle
               className="mt-0.5 h-4 w-4 shrink-0"
               aria-hidden="true"
             />
             <span>{error}</span>
+          </p>
+        )}
+
+        {!error && helperText && (
+          <p id={helperId} className={FIELD_HELPER_TEXT_CLASS}>
+            {helperText}
           </p>
         )}
       </div>

@@ -1,5 +1,6 @@
 // src/features/auth/components/CredentialsLoginForm.tsx
 import { useState, type ReactElement } from "react";
+import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, ShieldAlert } from "lucide-react";
@@ -153,7 +154,6 @@ export const CredentialsLoginForm = ({
         className="flex flex-col gap-4"
       >
         <Input
-          className="text-sm"
           id="login-email"
           type="email"
           label="Email tài khoản"
@@ -165,7 +165,6 @@ export const CredentialsLoginForm = ({
         />
 
         <Input
-          className="text-sm"
           id="login-password"
           type={showPassword ? "text" : "password"}
           label="Mật khẩu"
@@ -212,6 +211,21 @@ export const CredentialsLoginForm = ({
           >
             Quên mật khẩu?
           </button>
+        </div>
+
+        <div className="flex flex-col items-center gap-2 pt-3 border-t border-line text-center">
+          <p className="text-small text-ink-2">
+            Doanh nghiệp chưa có tài khoản?{" "}
+
+          </p>
+          <p>
+            <Link
+              to="/register"
+              className="font-semibold text-brand-600 hover:text-brand-500 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus rounded-xs px-1"
+            >
+              Đăng ký tài khoản Doanh nghiệp
+            </Link>
+          </p>
         </div>
       </form>
     </section>

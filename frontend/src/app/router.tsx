@@ -11,6 +11,7 @@ import {
 
 /* ── Lazy-loaded pages ──────────────────────────── */
 const LoginPage              = lazy(() => import("@/features/auth/pages/LoginPage"));
+const CompanyRegisterPage    = lazy(() => import("@/features/auth/pages/CompanyRegisterPage"));
 const AuthCallbackPage       = lazy(() => import("@/features/auth/pages/AuthCallbackPage"));
 const UnauthorizedPage       = lazy(() => import("@/features/auth/pages/UnauthorizedPage"));
 const ForbiddenPage          = lazy(() => import("@/features/auth/pages/ForbiddenPage"));
@@ -43,7 +44,7 @@ export function AppRouter() {
           {/* Auth routes — AuthLayout */}
           <Route element={<AuthLayout />}>
             <Route path="/login"    element={<LoginPage />} />
-            <Route path="/register" element={<Navigate to="/login" replace />} />
+            <Route path="/register" element={<CompanyRegisterPage />} />
           </Route>
 
           {/* Google SSO callback & Error pages */}

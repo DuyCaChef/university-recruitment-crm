@@ -28,6 +28,20 @@ export const ERROR_MESSAGES: Record<string, string> = {
   COMPANY_REJECTED:
     "Hồ sơ doanh nghiệp bị từ chối. Vui lòng xem lý do và gửi lại.",
 
+  // Lỗi đăng ký Doanh nghiệp (Module 01 & 04 — FR-AUTH-04 & FR-CVR-01)
+  E01: "Email đăng nhập đã được sử dụng bởi một tài khoản khác trong hệ thống. Vui lòng chọn email khác hoặc đăng nhập.",
+  E02: "Mã số thuế này đã được đăng ký bởi một doanh nghiệp khác trong hệ thống.",
+  E03: "Dữ liệu đăng ký thiếu hoặc không đúng định dạng. Vui lòng kiểm tra lại các trường thông tin.",
+  E04: "Khởi tạo hồ sơ doanh nghiệp thất bại. Giao dịch đã được hủy bỏ an toàn (Rollback), vui lòng thử lại.",
+  EMAIL_ALREADY_EXISTS:
+    "Email đăng nhập đã được sử dụng bởi một tài khoản khác. Vui lòng chọn email khác hoặc đăng nhập.",
+  TAX_CODE_ALREADY_EXISTS:
+    "Mã số thuế này đã được đăng ký bởi một doanh nghiệp khác trong hệ thống.",
+  INVALID_REGISTRATION_DATA:
+    "Thông tin gửi lên không hợp lệ hoặc thiếu dữ liệu bắt buộc.",
+  TRANSACTION_FAILED:
+    "Giao dịch khởi tạo tài khoản thất bại và đã được hoàn tác. Vui lòng thử lại sau.",
+
   // Lỗi HTTP & Hệ thống dùng chung
   UNAUTHORIZED: "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.",
   FORBIDDEN: "Bạn không có quyền thực hiện thao tác này.",
