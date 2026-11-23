@@ -334,7 +334,7 @@ export const CompanyRegisterPage = (): ReactElement => {
               autoComplete="username"
               disabled={isFormPending}
               error={errors.accountEmail?.message}
-              rightElement={<Mail className="h-4 w-4 text-ink-3" aria-hidden="true" />}
+              rightElement={<Mail className="h-5 w-5 mr-2 text-ink-3" aria-hidden="true" />}
               {...register("accountEmail")}
             />
 
@@ -354,9 +354,9 @@ export const CompanyRegisterPage = (): ReactElement => {
                   className="inline-flex h-8 w-9 items-center justify-center rounded-xs text-ink-2 hover:bg-subtle hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                 >
                   {showPassword ? (
-                    <EyeOff className="h-4 w-4" aria-hidden="true" />
+                    <EyeOff className="h-5 w-5" aria-hidden="true" />
                   ) : (
-                    <Eye className="h-4 w-4" aria-hidden="true" />
+                    <Eye className="h-5 w-5" aria-hidden="true" />
                   )}
                 </button>
               }
@@ -435,9 +435,9 @@ export const CompanyRegisterPage = (): ReactElement => {
                   className="inline-flex h-8 w-9 items-center justify-center rounded-xs text-ink-2 hover:bg-subtle hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                 >
                   {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" aria-hidden="true" />
+                    <EyeOff className="h-5 w-5" aria-hidden="true" />
                   ) : (
-                    <Eye className="h-4 w-4" aria-hidden="true" />
+                    <Eye className="h-5 w-5" aria-hidden="true" />
                   )}
                 </button>
               }
