@@ -4,10 +4,11 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
   type ReactElement,
   type ReactNode,
 } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -47,14 +48,14 @@ import {
 } from "../api/studentProfileApi";
 
 // ============================================================================
-// 1. HẰNG SỐ & ZOD SCHEMAS (KHỚP 100% BACKEND DTO MODULE 02)
+// 1. HẰNG SỐ, BỘ GỢI Ý ĐA LĨNH VỰC & ZOD SCHEMAS
 // ============================================================================
 
 type CapabilityTab = "skills" | "experiences" | "projects";
+type ProjectDomainKey = "tech" | "economics" | "language" | "agri" | "general";
 
 const VN_PHONE_REGEX = /^(?:(?:03|05|07|08|09)\d{8}|02\d{9})$/;
 const MAX_CV_BYTES = 5 * 1024 * 1024; // 5 MB
-
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2 MB
 const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
@@ -64,6 +65,170 @@ const PROFICIENCY_OPTIONS = [
   "Thành thạo",
   "Chuyên sâu",
 ] as const;
+
+interface DomainPresetConfig {
+  key: ProjectDomainKey;
+  label: string;
+  projectNamePlaceholder: string;
+  rolePlaceholder: string;
+  roleChips: readonly string[];
+  methodPlaceholder: string;
+  methodChips: readonly string[];
+  urlPlaceholder: string;
+  skillPlaceholder: string;
+  companyPlaceholder: string;
+  positionPlaceholder: string;
+}
+
+const PROJECT_DOMAIN_PRESETS: Record<ProjectDomainKey, DomainPresetConfig> = {
+  tech: {
+    key: "tech",
+    label: "Công nghệ",
+    projectNamePlaceholder: "VD: Hệ thống Web CRM Tuyển dụng Sinh viên AGU",
+    rolePlaceholder: "VD: Fullstack Developer",
+    roleChips: ["Trưởng nhóm", "Fullstack Dev", "Frontend Dev", "Backend Dev"],
+    methodPlaceholder: "Nhập công cụ/công nghệ rồi nhấn Enter (VD: ReactJS)...",
+    methodChips: ["ReactJS", "NestJS", "PostgreSQL", "Docker"],
+    urlPlaceholder: "https://github.com/username/project",
+    skillPlaceholder: "VD: TypeScript, NestJS, ReactJS, SQL...",
+    companyPlaceholder: "VD: Công ty TNHH Phần mềm TMA",
+    positionPlaceholder: "VD: Thực tập sinh Backend Developer",
+  },
+  economics: {
+    key: "economics",
+    label: "Kinh tế",
+    projectNamePlaceholder: "VD: Kế hoạch Marketing sản phẩm OCOP An Giang",
+    rolePlaceholder: "VD: Trưởng nhóm nghiên cứu",
+    roleChips: [
+      "Trưởng nhóm",
+      "Phân tích dữ liệu",
+      "Nghiên cứu thị trường",
+      "Thành viên",
+    ],
+    methodPlaceholder: "Nhập công cụ/phương pháp rồi nhấn Enter (VD: SPSS)...",
+    methodChips: ["SPSS", "Excel", "Phân tích SWOT", "Khảo sát thực địa"],
+    urlPlaceholder: "https://drive.google.com/file/...",
+    skillPlaceholder: "VD: Phân tích tài chính, SPSS, Excel nâng cao...",
+    companyPlaceholder: "VD: Ngân hàng BIDV Chi nhánh An Giang",
+    positionPlaceholder: "VD: Thực tập sinh Quan hệ khách hàng",
+  },
+  language: {
+    key: "language",
+    label: "Ngoại ngữ",
+    projectNamePlaceholder:
+      "VD: Biên dịch tài liệu du lịch / Điều phối CLB Tiếng Anh",
+    rolePlaceholder: "VD: Biên dịch viên",
+    roleChips: [
+      "Trưởng nhóm",
+      "Biên dịch viên",
+      "Trợ giảng",
+      "Điều phối viên",
+    ],
+    methodPlaceholder:
+      "Nhập kỹ năng/phương pháp rồi nhấn Enter (VD: Biên dịch)...",
+    methodChips: [
+      "Biên - Phiên dịch",
+      "Giảng dạy",
+      "Thuyết trình",
+      "Soạn học liệu",
+    ],
+    urlPlaceholder: "https://drive.google.com/file/...",
+    skillPlaceholder: "VD: Tiếng Anh giao tiếp, Biên dịch, IELTS 7.0...",
+    companyPlaceholder: "VD: Trung tâm Anh ngữ Quốc tế AGU",
+    positionPlaceholder: "VD: Trợ giảng Tiếng Anh",
+  },
+  agri: {
+    key: "agri",
+    label: "Nông - Thủy sản",
+    projectNamePlaceholder:
+      "VD: Đánh giá năng suất mô hình lúa hữu cơ ST25 tại Thoại Sơn",
+    rolePlaceholder: "VD: Nghiên cứu viên chính",
+    roleChips: [
+      "Trưởng nhóm",
+      "Nghiên cứu viên",
+      "Kỹ thuật hiện trường",
+      "Phân tích mẫu",
+    ],
+    methodPlaceholder:
+      "Nhập quy trình/kỹ thuật rồi nhấn Enter (VD: VietGAP)...",
+    methodChips: [
+      "Quy trình VietGAP",
+      "Mô hình Biofloc",
+      "Phân tích mẫu",
+      "Xử lý số liệu",
+    ],
+    urlPlaceholder: "https://drive.google.com/file/...",
+    skillPlaceholder: "VD: Kỹ thuật nuôi trồng, Kiểm nghiệm chất lượng...",
+    companyPlaceholder: "VD: Công ty Cổ phần Tập đoàn Lộc Trời",
+    positionPlaceholder: "VD: Thực tập sinh Kỹ thuật nông nghiệp",
+  },
+  general: {
+    key: "general",
+    label: "Chung",
+    projectNamePlaceholder:
+      "VD: Đề tài Nghiên cứu khoa học cấp Trường / Dự án cộng đồng",
+    rolePlaceholder: "VD: Chủ nhiệm đề tài",
+    roleChips: [
+      "Trưởng nhóm",
+      "Nghiên cứu viên",
+      "Điều phối viên",
+      "Thành viên",
+    ],
+    methodPlaceholder: "Nhập phương pháp/công cụ rồi nhấn Enter...",
+    methodChips: [
+      "Nghiên cứu tài liệu",
+      "Khảo sát",
+      "Thuyết trình",
+      "Làm việc nhóm",
+    ],
+    urlPlaceholder: "https://drive.google.com/file/...",
+    skillPlaceholder: "VD: Tin học văn phòng, Thuyết trình, Quản lý dự án...",
+    companyPlaceholder: "VD: Trung tâm Hướng nghiệp & Hỗ trợ SV AGU",
+    positionPlaceholder: "VD: Cộng tác viên tổ chức sự kiện",
+  },
+};
+
+const PROJECT_DOMAIN_LIST: readonly DomainPresetConfig[] = [
+  PROJECT_DOMAIN_PRESETS.tech,
+  PROJECT_DOMAIN_PRESETS.economics,
+  PROJECT_DOMAIN_PRESETS.language,
+  PROJECT_DOMAIN_PRESETS.agri,
+  PROJECT_DOMAIN_PRESETS.general,
+];
+
+function inferProjectDomain(
+  major?: string | null,
+  faculty?: string | null,
+): ProjectDomainKey {
+  const combined = `${major ?? ""} ${faculty ?? ""}`.toLowerCase();
+  if (
+    /(công nghệ thông tin|kỹ thuật phần mềm|khoa học máy tính|tin học|mạng máy tính|cntt|kỹ thuật)/i.test(
+      combined,
+    )
+  ) {
+    return "tech";
+  }
+  if (
+    /(kinh tế|quản trị|tài chính|kế toán|ngân hàng|marketing|thương mại|du lịch)/i.test(
+      combined,
+    )
+  ) {
+    return "economics";
+  }
+  if (
+    /(ngôn ngữ|tiếng anh|ngoại ngữ|việt nam học|sư phạm anh)/i.test(combined)
+  ) {
+    return "language";
+  }
+  if (
+    /(nông nghiệp|thủy sản|thú y|chăn nuôi|trồng trọt|công nghệ thực phẩm|môi trường|sinh học)/i.test(
+      combined,
+    )
+  ) {
+    return "agri";
+  }
+  return "general";
+}
 
 const personalProfileSchema = z.object({
   displayName: z
@@ -135,8 +300,8 @@ const experienceFormSchema = z
     position: z
       .string()
       .trim()
-      .min(1, "Vui lòng nhập vị trí công việc.")
-      .max(150, "Vị trí công việc không được vượt quá 150 ký tự."),
+      .min(1, "Vui lòng nhập vị trí đảm nhiệm.")
+      .max(150, "Vị trí đảm nhiệm không được vượt quá 150 ký tự."),
     startDate: z
       .string()
       .min(1, "Vui lòng chọn ngày bắt đầu.")
@@ -181,11 +346,11 @@ const projectFormSchema = z
     technologies: z
       .string()
       .trim()
-      .max(500, "Nội dung không được vượt quá 500 ký tự."),
+      .max(500, "Nội dung công cụ & phương pháp không được vượt quá 500 ký tự."),
     projectUrl: z
       .string()
       .trim()
-      .max(500, "Đường dẫn không được vượt quá 500 ký tự.")
+      .max(500, "Đường dẫn minh chứng không được vượt quá 500 ký tự.")
       .refine((val) => {
         if (val === "") return true;
         try {
@@ -258,6 +423,14 @@ function formatSize(bytes: number): string {
     : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function parseCommaTokens(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function extractApiErrorMessage(
   error: unknown,
   fallback = "Đã xảy ra lỗi khi xử lý yêu cầu. Vui lòng thử lại.",
@@ -281,14 +454,218 @@ function extractApiErrorMessage(
 }
 
 // ============================================================================
-// 3. MODAL DIALOG DÙNG CHUNG (CHUẨN ACCESSIBILITY & DESIGN SYSTEM)
+// 3. COMPONENT TAG INPUT (NHẬP NHIỀU THẺ CO GIÃN ĐA DÒNG)
+// ============================================================================
+
+interface TagInputProps {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (nextValue: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  error?: string;
+  helperText?: string;
+  maxTotalLength?: number;
+  suggestions?: readonly string[];
+}
+
+function TagInput({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder = "Nhập nội dung rồi nhấn Enter...",
+  disabled = false,
+  error,
+  helperText,
+  maxTotalLength = 500,
+  suggestions = [],
+}: TagInputProps): ReactElement {
+  const [draft, setDraft] = useState<string>("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const tags = parseCommaTokens(value);
+
+  const commitDraft = (rawText: string): void => {
+    const incoming = parseCommaTokens(rawText);
+    if (incoming.length === 0) {
+      setDraft("");
+      return;
+    }
+
+    const merged = [...tags];
+    for (const token of incoming) {
+      const exists = merged.some(
+        (existing) => existing.toLowerCase() === token.toLowerCase(),
+      );
+      if (!exists) {
+        merged.push(token);
+      }
+    }
+
+    const serialized = merged.join(", ");
+    if (serialized.length <= maxTotalLength) {
+      onChange(serialized);
+    }
+    setDraft("");
+  };
+
+  const removeTag = (target: string): void => {
+    const next = tags.filter((item) => item !== target);
+    onChange(next.join(", "));
+  };
+
+  const toggleSuggestion = (chip: string): void => {
+    const exists = tags.some(
+      (item) => item.toLowerCase() === chip.toLowerCase(),
+    );
+    if (exists) {
+      const next = tags.filter(
+        (item) => item.toLowerCase() !== chip.toLowerCase(),
+      );
+      onChange(next.join(", "));
+    } else {
+      commitDraft(chip);
+    }
+    inputRef.current?.focus();
+  };
+
+  const handleKeyDown = (
+    event: ReactKeyboardEvent<HTMLInputElement>,
+  ): void => {
+    if (event.key === "Enter" || event.key === ",") {
+      event.preventDefault();
+      commitDraft(draft);
+    } else if (
+      event.key === "Backspace" &&
+      draft === "" &&
+      tags.length > 0
+    ) {
+      event.preventDefault();
+      removeTag(tags[tags.length - 1]);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <label htmlFor={id} className="text-small font-medium text-ink">
+          {label}
+        </label>
+        {tags.length > 0 && (
+          <span className="text-[11px] font-medium text-ink-3">
+            Đã thêm {tags.length} mục
+          </span>
+        )}
+      </div>
+
+      {/* Khung chứa thẻ co giãn nhiều dòng */}
+      <div
+        onClick={() => !disabled && inputRef.current?.focus()}
+        className={cn(
+          "flex min-h-11 w-full flex-wrap items-center gap-1.5 rounded-input border-2 bg-surface px-3 py-2 transition-all duration-150",
+          disabled
+            ? "cursor-not-allowed border-line bg-subtle text-ink-3"
+            : error
+              ? "cursor-text border-danger-border focus-within:ring-4 focus-within:ring-danger-bg"
+              : "cursor-text border-line-strong hover:border-brand-400 focus-within:border-brand-600 focus-within:ring-4 focus-within:ring-brand-100",
+        )}
+      >
+        {tags.map((tag) => (
+          <span
+            key={tag}
+            className="inline-flex items-center gap-1 rounded-pill border border-brand-200 bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700"
+          >
+            <span>{tag}</span>
+            {!disabled && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  removeTag(tag);
+                }}
+                aria-label={`Xóa ${tag}`}
+                className="rounded-pill p-0.5 text-brand-600 transition-colors hover:bg-brand-200/70 hover:text-brand-900 focus-visible:outline-none"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </span>
+        ))}
+
+        <input
+          ref={inputRef}
+          id={id}
+          type="text"
+          value={draft}
+          disabled={disabled}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={() => {
+            if (draft.trim()) {
+              commitDraft(draft);
+            }
+          }}
+          placeholder={
+            tags.length === 0
+              ? placeholder
+              : "Thêm mục khác... (nhấn Enter hoặc dấu phẩy)"
+          }
+          className="min-w-[180px] flex-1 bg-transparent text-small text-ink placeholder:text-ink-3 focus:outline-none disabled:cursor-not-allowed"
+        />
+      </div>
+
+      {/* Chip gợi ý nhanh theo lĩnh vực */}
+      {suggestions.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+          <span className="text-[11px] text-ink-3">Gợi ý nhanh:</span>
+          {suggestions.map((chip) => {
+            const isSelected = tags.some(
+              (item) => item.toLowerCase() === chip.toLowerCase(),
+            );
+            return (
+              <button
+                key={chip}
+                type="button"
+                disabled={disabled}
+                onClick={() => toggleSuggestion(chip)}
+                className={cn(
+                  "rounded-pill border px-2.5 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50",
+                  isSelected
+                    ? "border-brand-300 bg-brand-50 text-brand-700"
+                    : "border-line bg-subtle text-ink-2 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700",
+                )}
+              >
+                {isSelected ? `✓ ${chip}` : `+ ${chip}`}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {error ? (
+        <p role="alert" className="text-xs text-danger-ink">
+          {error}
+        </p>
+      ) : (
+        helperText && <p className="text-xs text-ink-3">{helperText}</p>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// 4. MODAL DIALOG DÙNG CHUNG (STICKY HEADER & FOOTER, CLEAN SCROLLBAR)
 // ============================================================================
 
 interface FormDialogProps {
   open: boolean;
   title: string;
   description?: string;
+  size?: "md" | "lg";
   onClose: () => void;
+  footer?: ReactNode;
   children: ReactNode;
 }
 
@@ -296,7 +673,9 @@ function FormDialog({
   open,
   title,
   description,
+  size = "md",
   onClose,
+  footer,
   children,
 }: FormDialogProps): ReactElement | null {
   useEffect(() => {
@@ -320,16 +699,19 @@ function FormDialog({
         aria-modal="true"
         aria-labelledby="profile-dialog-title"
         onClick={(event) => event.stopPropagation()}
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-        className="w-full max-w-lg rounded-panel border border-line bg-surface p-5 shadow-lg md:p-6 max-h-[90vh] overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className={cn(
+          "flex max-h-[90vh] w-full flex-col overflow-hidden rounded-panel border border-line bg-surface shadow-lg",
+          size === "lg" ? "max-w-2xl" : "max-w-lg",
+        )}
       >
-        <div className="flex items-start justify-between gap-3 border-b border-line pb-3">
+        {/* Header cố định */}
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-line px-5 py-4 md:px-6">
           <div>
             <h3 id="profile-dialog-title" className="text-h3 text-ink">
               {title}
             </h3>
             {description && (
-              <p className="mt-1 text-xs text-ink-2">{description}</p>
+              <p className="mt-1 text-xs leading-5 text-ink-2">{description}</p>
             )}
           </div>
           <button
@@ -342,20 +724,34 @@ function FormDialog({
           </button>
         </div>
 
-        <div className="mt-4">{children}</div>
+        {/* Nội dung biểu mẫu cuộn mượt, ẩn thanh cuộn thô */}
+        <div
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          className="flex-1 overflow-y-auto px-5 py-4 md:px-6 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {children}
+        </div>
+
+        {/* Footer cố định */}
+        {footer && (
+          <div className="shrink-0 border-t border-line bg-canvas/70 px-5 py-3.5 md:px-6">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 // ============================================================================
-// 4. COMPONENT CHÍNH: StudentProfilePage
+// 5. COMPONENT CHÍNH: StudentProfilePage
 // ============================================================================
 
 export function StudentProfilePage(): ReactElement {
   const todayStr = getTodayInputValue();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   // Tab & Thông báo toàn trang
   const [activeTab, setActiveTab] = useState<CapabilityTab>("skills");
@@ -378,7 +774,11 @@ export function StudentProfilePage(): ReactElement {
     editing: StudentProject | null;
   }>({ open: false, editing: null });
 
-  // Trạng thái Hộp thoại xác nhận Xóa (mở rộng type thêm "avatar")
+  // Ngữ cảnh gợi ý lĩnh vực trong Modal Dự án
+  const [projectDomain, setProjectDomain] =
+    useState<ProjectDomainKey>("general");
+
+  // Trạng thái Hộp thoại xác nhận Xóa
   const [confirmDelete, setConfirmDelete] = useState<{
     type: "skill" | "experience" | "project" | "cv" | "avatar";
     id: string;
@@ -416,49 +816,15 @@ export function StudentProfilePage(): ReactElement {
     queryFn: studentProfileApi.getCvs,
   });
 
-  // ── Form 1: Thông tin cá nhân (React Hook Form + Zod) ──────────────────────
-  const avatarInputRef = useRef<HTMLInputElement>(null);
-
-  const uploadAvatarMutation = useMutation({
-    mutationFn: studentProfileApi.uploadAvatar,
-    onSuccess: async () => {
-      if (avatarInputRef.current) {
-        avatarInputRef.current.value = "";
-      }
-      setErrorNotice(null);
-      setNotice("Đã cập nhật ảnh đại diện mới.");
-      await queryClient.invalidateQueries({ queryKey: ["student-profile"] });
-    },
-    onError: (err) => {
-      if (avatarInputRef.current) {
-        avatarInputRef.current.value = "";
-      }
-      setNotice(null);
-      setErrorNotice(
-        extractApiErrorMessage(err, "Không thể tải lên ảnh đại diện."),
-      );
-    },
-  });
-
-  const deleteAvatarMutation = useMutation({
-    mutationFn: studentProfileApi.deleteAvatar,
-    onSuccess: async () => {
-      setConfirmDelete(null);
-      setErrorNotice(null);
-      setNotice("Đã gỡ ảnh đại diện.");
-      await queryClient.invalidateQueries({ queryKey: ["student-profile"] });
-    },
-    onError: (err) => {
-      setConfirmDelete(null);
-      setNotice(null);
-      setErrorNotice(
-        extractApiErrorMessage(err, "Không thể gỡ ảnh đại diện."),
-      );
-    },
-  });
-
   const profile = profileQuery.data;
+  const defaultDomainKey = inferProjectDomain(
+    profile?.major,
+    profile?.faculty,
+  );
+  const defaultDomainPreset = PROJECT_DOMAIN_PRESETS[defaultDomainKey];
+  const activeProjectPreset = PROJECT_DOMAIN_PRESETS[projectDomain];
 
+  // ── Form 1: Thông tin cá nhân (React Hook Form + Zod) ──────────────────────
   const personalForm = useForm<PersonalProfileFormValues>({
     resolver: zodResolver(personalProfileSchema),
     mode: "onBlur",
@@ -503,7 +869,7 @@ export function StudentProfilePage(): ReactElement {
   const isCurrentExp =
     useWatch({ control: experienceForm.control, name: "isCurrent" }) ?? false;
 
-  // ── Form 4: Dự án cá nhân (Thêm / Sửa) ─────────────────────────────────────
+  // ── Form 4: Dự án / Đề tài cá nhân (Thêm / Sửa) ──────────────────────────
   const projectForm = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     mode: "onBlur",
@@ -518,7 +884,45 @@ export function StudentProfilePage(): ReactElement {
     },
   });
 
-  // ── Mutations (Granular Cache Invalidation + Error Handling) ───────────────
+  // ── Mutations ──────────────────────────────────────────────────────────────
+  const uploadAvatarMutation = useMutation({
+    mutationFn: studentProfileApi.uploadAvatar,
+    onSuccess: async () => {
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = "";
+      }
+      setErrorNotice(null);
+      setNotice("Đã cập nhật ảnh đại diện mới.");
+      await queryClient.invalidateQueries({ queryKey: ["student-profile"] });
+    },
+    onError: (err) => {
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = "";
+      }
+      setNotice(null);
+      setErrorNotice(
+        extractApiErrorMessage(err, "Không thể tải lên ảnh đại diện."),
+      );
+    },
+  });
+
+  const deleteAvatarMutation = useMutation({
+    mutationFn: studentProfileApi.deleteAvatar,
+    onSuccess: async () => {
+      setConfirmDelete(null);
+      setErrorNotice(null);
+      setNotice("Đã gỡ ảnh đại diện.");
+      await queryClient.invalidateQueries({ queryKey: ["student-profile"] });
+    },
+    onError: (err) => {
+      setConfirmDelete(null);
+      setNotice(null);
+      setErrorNotice(
+        extractApiErrorMessage(err, "Không thể gỡ ảnh đại diện."),
+      );
+    },
+  });
+
   const profileMutation = useMutation({
     mutationFn: studentProfileApi.updateProfile,
     onSuccess: async () => {
@@ -674,10 +1078,11 @@ export function StudentProfilePage(): ReactElement {
 
   const saveProjectMutation = useMutation({
     mutationFn: async (values: ProjectFormValues) => {
+      const normalizedTech = parseCommaTokens(values.technologies).join(", ");
       const payload = {
         name: values.name.trim(),
         role: values.role.trim() || null,
-        technologies: values.technologies.trim() || null,
+        technologies: normalizedTech || null,
         projectUrl: values.projectUrl.trim() || null,
         startDate: values.startDate || null,
         endDate: values.endDate || null,
@@ -696,7 +1101,11 @@ export function StudentProfilePage(): ReactElement {
       setProjModalState({ open: false, editing: null });
       projectForm.reset();
       setErrorNotice(null);
-      setNotice(isEdit ? "Đã cập nhật dự án." : "Đã thêm dự án cá nhân mới.");
+      setNotice(
+        isEdit
+          ? "Đã cập nhật dự án / đề tài."
+          : "Đã thêm dự án / đề tài mới vào hồ sơ.",
+      );
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["student-projects"] }),
         queryClient.invalidateQueries({ queryKey: ["student-profile"] }),
@@ -704,7 +1113,7 @@ export function StudentProfilePage(): ReactElement {
     },
     onError: (err) => {
       setErrorNotice(
-        extractApiErrorMessage(err, "Không thể lưu thông tin dự án."),
+        extractApiErrorMessage(err, "Không thể lưu thông tin dự án / đề tài."),
       );
     },
   });
@@ -714,7 +1123,7 @@ export function StudentProfilePage(): ReactElement {
     onSuccess: async () => {
       setConfirmDelete(null);
       setErrorNotice(null);
-      setNotice("Đã xóa dự án cá nhân.");
+      setNotice("Đã xóa dự án / đề tài khỏi hồ sơ.");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["student-projects"] }),
         queryClient.invalidateQueries({ queryKey: ["student-profile"] }),
@@ -722,7 +1131,9 @@ export function StudentProfilePage(): ReactElement {
     },
     onError: (err) => {
       setConfirmDelete(null);
-      setErrorNotice(extractApiErrorMessage(err, "Không thể xóa dự án."));
+      setErrorNotice(
+        extractApiErrorMessage(err, "Không thể xóa dự án / đề tài."),
+      );
     },
   });
 
@@ -928,6 +1339,7 @@ export function StudentProfilePage(): ReactElement {
   };
 
   const openCreateProjectModal = (): void => {
+    setProjectDomain(defaultDomainKey);
     projectForm.reset({
       name: "",
       role: "",
@@ -941,6 +1353,7 @@ export function StudentProfilePage(): ReactElement {
   };
 
   const openEditProjectModal = (project: StudentProject): void => {
+    setProjectDomain(defaultDomainKey);
     projectForm.reset({
       name: project.name,
       role: project.role ?? "",
@@ -1282,7 +1695,7 @@ export function StudentProfilePage(): ReactElement {
         </div>
       </section>
 
-      {/* ── Khối 2: Thông tin cá nhân (Editable) ─────────────────────────── */}
+      {/* ── Khối 2: Thông tin cá nhân (Editable — Nhãn gọn sạch) ──────────── */}
       <section className="rounded-panel border border-line bg-surface p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
@@ -1303,12 +1716,12 @@ export function StudentProfilePage(): ReactElement {
           <div className="md:col-span-2">
             <Input
               id="student-display-name"
-              label="Tên hiển thị trên hồ sơ (Tùy chọn)"
+              label="Tên hiển thị trên hồ sơ"
               placeholder={profile.originalFullName || profile.fullName}
               maxLength={150}
               disabled={isSuspended || profileMutation.isPending}
               error={personalForm.formState.errors.displayName?.message}
-              helperText={`Để trống để hiển thị theo họ tên gốc từ AGU (${profile.originalFullName || profile.fullName}). Dữ liệu gốc từ Nhà trường không bị thay đổi.`}
+              helperText={`Để trống để hiển thị theo họ tên gốc AGU (${profile.originalFullName || profile.fullName}).`}
               {...personalForm.register("displayName")}
             />
           </div>
@@ -1316,7 +1729,7 @@ export function StudentProfilePage(): ReactElement {
           <Input
             id="student-phone"
             type="tel"
-            label="Số điện thoại (Tùy chọn)"
+            label="Số điện thoại"
             placeholder="VD: 0912345678"
             disabled={isSuspended || profileMutation.isPending}
             error={personalForm.formState.errors.phone?.message}
@@ -1326,7 +1739,7 @@ export function StudentProfilePage(): ReactElement {
           <Input
             id="student-dob"
             type="date"
-            label="Ngày sinh (Tùy chọn)"
+            label="Ngày sinh"
             disabled={isSuspended || profileMutation.isPending}
             error={personalForm.formState.errors.dateOfBirth?.message}
             {...personalForm.register("dateOfBirth")}
@@ -1337,7 +1750,7 @@ export function StudentProfilePage(): ReactElement {
               className="text-small font-medium text-ink"
               htmlFor="student-gender"
             >
-              Giới tính (Tùy chọn)
+              Giới tính
             </label>
             <select
               id="student-gender"
@@ -1358,7 +1771,7 @@ export function StudentProfilePage(): ReactElement {
             min="0"
             max="4"
             step="0.01"
-            label="GPA tích lũy — Thang 4.00 (Tùy chọn)"
+            label="GPA tích lũy (Thang 4.00)"
             placeholder="VD: 3.50"
             disabled={isSuspended || profileMutation.isPending}
             error={personalForm.formState.errors.gpa?.message}
@@ -1368,7 +1781,7 @@ export function StudentProfilePage(): ReactElement {
           <div className="md:col-span-2">
             <Input
               id="student-address"
-              label="Địa chỉ hiện tại (Tùy chọn)"
+              label="Địa chỉ hiện tại"
               placeholder="VD: Phường Mỹ Xuyên, TP. Long Xuyên, An Giang"
               maxLength={255}
               disabled={isSuspended || profileMutation.isPending}
@@ -1380,7 +1793,7 @@ export function StudentProfilePage(): ReactElement {
           <div className="md:col-span-2">
             <Textarea
               id="student-bio"
-              label="Giới thiệu và mục tiêu nghề nghiệp (Tùy chọn)"
+              label="Giới thiệu & Mục tiêu nghề nghiệp"
               placeholder="Mô tả ngắn gọn định hướng nghề nghiệp, thế mạnh chuyên môn của bạn..."
               maxLength={2000}
               rows={4}
@@ -1406,7 +1819,7 @@ export function StudentProfilePage(): ReactElement {
         </form>
       </section>
 
-      {/* ── Khối 3: Kỹ năng, Kinh nghiệm làm việc & Dự án ────────────────── */}
+      {/* ── Khối 3: Kỹ năng, Kinh nghiệm làm việc & Dự án / Đề tài ───────── */}
       <section className="overflow-hidden rounded-panel border border-line bg-surface shadow-sm">
         <div
           className="flex flex-wrap gap-1 border-b border-line px-4 pt-3"
@@ -1417,7 +1830,7 @@ export function StudentProfilePage(): ReactElement {
             [
               ["skills", "Kỹ năng", skills.length],
               ["experiences", "Kinh nghiệm", experiences.length],
-              ["projects", "Dự án", projects.length],
+              ["projects", "Dự án / Đề tài", projects.length],
             ] as const
           ).map(([id, label, count]) => (
             <button
@@ -1449,8 +1862,8 @@ export function StudentProfilePage(): ReactElement {
                 <div>
                   <h2 className="text-h3 text-ink">Kỹ năng chuyên môn</h2>
                   <p className="mt-1 text-small text-ink-2">
-                    Thêm các kỹ năng lập trình, công cụ hoặc kỹ năng mềm của
-                    bạn.
+                    Các kỹ năng chuyên môn, công cụ làm việc hoặc kỹ năng mềm
+                    của bạn.
                   </p>
                 </div>
                 <Button
@@ -1525,8 +1938,8 @@ export function StudentProfilePage(): ReactElement {
                     Kinh nghiệm làm việc &amp; Thực tập
                   </h2>
                   <p className="mt-1 text-small text-ink-2">
-                    Quá trình thực tập, làm việc bán thời gian hoặc toàn thời
-                    gian.
+                    Quá trình thực tập, kiến tập, làm việc bán thời gian hoặc
+                    toàn thời gian.
                   </p>
                 </div>
                 <Button
@@ -1605,13 +2018,13 @@ export function StudentProfilePage(): ReactElement {
             </>
           )}
 
-          {/* Tab 3: Dự án cá nhân */}
+          {/* Tab 3: Dự án & Đề tài */}
           {activeTab === "projects" && (
             <>
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
                   <h2 className="text-h3 text-ink">
-                    Dự án cá nhân &amp; Nghiên cứu
+                    Dự án, Đề tài &amp; Nghiên cứu
                   </h2>
                   <p className="mt-1 text-small text-ink-2">
                     Đồ án môn học, khóa luận, đề tài nghiên cứu khoa học hoặc
@@ -1625,101 +2038,111 @@ export function StudentProfilePage(): ReactElement {
                   disabled={isSuspended}
                 >
                   <Plus className="h-4 w-4" />
-                  Thêm dự án
+                  Thêm dự án / đề tài
                 </Button>
               </div>
 
               {projects.length === 0 ? (
                 <div className="rounded-card border border-dashed border-line-strong py-8 text-center text-small text-ink-2">
-                  Chưa có dự án nào trong hồ sơ.
+                  Chưa có dự án hoặc đề tài nào trong hồ sơ.
                 </div>
               ) : (
                 <div className="grid gap-3 md:grid-cols-2">
-                  {projects.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex flex-col justify-between rounded-card border border-line p-4"
-                    >
-                      <div>
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <h3 className="text-small font-bold text-ink">
-                              {item.name}
-                            </h3>
-                            {item.role && (
-                              <p className="mt-1 text-xs font-medium text-ink-2">
-                                Vai trò: {item.role}
-                              </p>
-                            )}
+                  {projects.map((item) => {
+                    const methodTokens = parseCommaTokens(item.technologies);
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex flex-col justify-between rounded-card border border-line p-4"
+                      >
+                        <div>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <h3 className="text-small font-bold text-ink">
+                                {item.name}
+                              </h3>
+                              {item.role && (
+                                <p className="mt-1 text-xs font-medium text-ink-2">
+                                  Vai trò: {item.role}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex shrink-0 items-center gap-1">
+                              <button
+                                type="button"
+                                disabled={isSuspended}
+                                aria-label={`Sửa dự án ${item.name}`}
+                                onClick={() => openEditProjectModal(item)}
+                                className="rounded-button p-2 text-ink-3 hover:bg-brand-50 hover:text-brand-600 disabled:pointer-events-none disabled:opacity-40"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isSuspended}
+                                aria-label={`Xóa dự án ${item.name}`}
+                                onClick={() =>
+                                  setConfirmDelete({
+                                    type: "project",
+                                    id: item.id,
+                                    label: item.name,
+                                  })
+                                }
+                                className="rounded-button p-2 text-ink-3 hover:bg-danger-bg hover:text-danger-ink disabled:pointer-events-none disabled:opacity-40"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
                           </div>
-                          <div className="flex shrink-0 items-center gap-1">
-                            <button
-                              type="button"
-                              disabled={isSuspended}
-                              aria-label={`Sửa dự án ${item.name}`}
-                              onClick={() => openEditProjectModal(item)}
-                              className="rounded-button p-2 text-ink-3 hover:bg-brand-50 hover:text-brand-600 disabled:pointer-events-none disabled:opacity-40"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                            <button
-                              type="button"
-                              disabled={isSuspended}
-                              aria-label={`Xóa dự án ${item.name}`}
-                              onClick={() =>
-                                setConfirmDelete({
-                                  type: "project",
-                                  id: item.id,
-                                  label: item.name,
-                                })
-                              }
-                              className="rounded-button p-2 text-ink-3 hover:bg-danger-bg hover:text-danger-ink disabled:pointer-events-none disabled:opacity-40"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
+
+                          {(item.startDate || item.endDate) && (
+                            <p className="mt-2 flex items-center gap-1.5 text-caption text-ink-3">
+                              <CalendarDays className="h-3.5 w-3.5" />
+                              {item.startDate
+                                ? formatMonthYear(item.startDate)
+                                : "..."}{" "}
+                              —{" "}
+                              {item.endDate
+                                ? formatMonthYear(item.endDate)
+                                : "Hiện tại"}
+                            </p>
+                          )}
+
+                          {item.description && (
+                            <p className="mt-2 whitespace-pre-line text-xs leading-5 text-ink-2">
+                              {item.description}
+                            </p>
+                          )}
                         </div>
 
-                        {(item.startDate || item.endDate) && (
-                          <p className="mt-2 flex items-center gap-1.5 text-caption text-ink-3">
-                            <CalendarDays className="h-3.5 w-3.5" />
-                            {item.startDate
-                              ? formatMonthYear(item.startDate)
-                              : "..."}{" "}
-                            —{" "}
-                            {item.endDate
-                              ? formatMonthYear(item.endDate)
-                              : "Hiện tại"}
-                          </p>
-                        )}
-
-                        {item.description && (
-                          <p className="mt-2 whitespace-pre-line text-xs leading-5 text-ink-2">
-                            {item.description}
-                          </p>
-                        )}
+                        <div className="mt-3 space-y-2.5">
+                          {methodTokens.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {methodTokens.map((token) => (
+                                <span
+                                  key={token}
+                                  className="rounded-pill bg-brand-50 px-2.5 py-0.5 text-[11px] font-medium text-brand-700"
+                                >
+                                  {token}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {item.projectUrl && (
+                            <a
+                              href={item.projectUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 hover:underline"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                              Xem minh chứng / sản phẩm
+                            </a>
+                          )}
+                        </div>
                       </div>
-
-                      <div className="mt-3 space-y-2">
-                        {item.technologies && (
-                          <p className="text-caption font-medium text-brand-600">
-                            Công nghệ: {item.technologies}
-                          </p>
-                        )}
-                        {item.projectUrl && (
-                          <a
-                            href={item.projectUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 hover:underline"
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                            Xem liên kết dự án
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </>
@@ -1928,7 +2351,7 @@ export function StudentProfilePage(): ReactElement {
               onChange={(event) => setCvTitle(event.target.value)}
               maxLength={150}
               containerClassName="mt-3"
-              placeholder="VD: CV Backend Developer"
+              placeholder="VD: CV Thực tập sinh / CV Ứng tuyển"
             />
 
             <label className="mt-3 flex items-center gap-2 text-xs text-ink-2 cursor-pointer select-none">
@@ -1975,8 +2398,40 @@ export function StudentProfilePage(): ReactElement {
         }
         description="Mỗi kỹ năng chỉ xuất hiện một lần trong hồ sơ của bạn."
         onClose={() => setSkillModalState({ open: false, editing: null })}
+        footer={
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[11px] text-ink-3">* Trường bắt buộc</span>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={saveSkillMutation.isPending}
+                onClick={() =>
+                  setSkillModalState({ open: false, editing: null })
+                }
+              >
+                Hủy
+              </Button>
+              <Button
+                type="submit"
+                form="skill-modal-form"
+                size="sm"
+                isLoading={saveSkillMutation.isPending}
+                disabled={saveSkillMutation.isPending}
+                className="text-white hover:text-white"
+              >
+                <Save className="h-4 w-4 text-white" />
+                <span className="text-white">
+                  {skillModalState.editing ? "Cập nhật" : "Thêm kỹ năng"}
+                </span>
+              </Button>
+            </div>
+          </div>
+        }
       >
         <form
+          id="skill-modal-form"
           className="space-y-4"
           noValidate
           onSubmit={skillForm.handleSubmit((vals) =>
@@ -1986,7 +2441,7 @@ export function StudentProfilePage(): ReactElement {
           <Input
             id="skill-name"
             label="Tên kỹ năng *"
-            placeholder="VD: TypeScript, NestJS, ReactJS, Tiếng Anh..."
+            placeholder={defaultDomainPreset.skillPlaceholder}
             maxLength={100}
             disabled={saveSkillMutation.isPending}
             error={skillForm.formState.errors.skillName?.message}
@@ -1998,7 +2453,7 @@ export function StudentProfilePage(): ReactElement {
               htmlFor="skill-proficiency"
               className="text-small font-medium text-ink"
             >
-              Mức độ thành thạo (Tùy chọn)
+              Mức độ thành thạo
             </label>
             <select
               id="skill-proficiency"
@@ -2014,30 +2469,6 @@ export function StudentProfilePage(): ReactElement {
               ))}
             </select>
           </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={saveSkillMutation.isPending}
-              onClick={() =>
-                setSkillModalState({ open: false, editing: null })
-              }
-            >
-              Hủy
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              isLoading={saveSkillMutation.isPending}
-              disabled={saveSkillMutation.isPending}
-              className="text-white hover:text-white"
-            >
-              <Save className="h-4 w-4 text-white" />
-              <span className="text-white">{skillModalState.editing ? "Cập nhật" : "Thêm kỹ năng"}</span>
-            </Button>
-          </div>
         </form>
       </FormDialog>
 
@@ -2046,40 +2477,73 @@ export function StudentProfilePage(): ReactElement {
       {/* ===================================================================== */}
       <FormDialog
         open={expModalState.open}
+        size="lg"
         title={
           expModalState.editing
             ? "Cập nhật kinh nghiệm làm việc"
             : "Thêm kinh nghiệm làm việc"
         }
-        description="Ghi nhận quá trình thực tập hoặc làm việc thực tế tại doanh nghiệp."
+        description="Ghi nhận quá trình thực tập, kiến tập hoặc làm việc thực tế tại cơ quan, doanh nghiệp."
         onClose={() => setExpModalState({ open: false, editing: null })}
+        footer={
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[11px] text-ink-3">* Trường bắt buộc</span>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={saveExperienceMutation.isPending}
+                onClick={() => setExpModalState({ open: false, editing: null })}
+              >
+                Hủy
+              </Button>
+              <Button
+                type="submit"
+                form="experience-modal-form"
+                size="sm"
+                isLoading={saveExperienceMutation.isPending}
+                disabled={saveExperienceMutation.isPending}
+                className="text-white hover:text-white"
+              >
+                <Save className="h-4 w-4 text-white" />
+                <span className="text-white">
+                  {expModalState.editing ? "Cập nhật" : "Lưu kinh nghiệm"}
+                </span>
+              </Button>
+            </div>
+          </div>
+        }
       >
         <form
+          id="experience-modal-form"
           className="space-y-4"
           noValidate
           onSubmit={experienceForm.handleSubmit((vals) =>
             saveExperienceMutation.mutate(vals),
           )}
         >
-          <Input
-            id="exp-company"
-            label="Tên công ty / Tổ chức *"
-            placeholder="VD: Công ty TNHH Phần mềm ABC"
-            maxLength={150}
-            disabled={saveExperienceMutation.isPending}
-            error={experienceForm.formState.errors.companyName?.message}
-            {...experienceForm.register("companyName")}
-          />
+          <div className="grid gap-4 md:grid-cols-2">
+            <Input
+              id="exp-company"
+              label="Công ty / Tổ chức *"
+              placeholder={defaultDomainPreset.companyPlaceholder}
+              maxLength={150}
+              disabled={saveExperienceMutation.isPending}
+              error={experienceForm.formState.errors.companyName?.message}
+              {...experienceForm.register("companyName")}
+            />
 
-          <Input
-            id="exp-position"
-            label="Vị trí đảm nhiệm *"
-            placeholder="VD: Thực tập sinh Backend Developer"
-            maxLength={150}
-            disabled={saveExperienceMutation.isPending}
-            error={experienceForm.formState.errors.position?.message}
-            {...experienceForm.register("position")}
-          />
+            <Input
+              id="exp-position"
+              label="Vị trí đảm nhiệm *"
+              placeholder={defaultDomainPreset.positionPlaceholder}
+              maxLength={150}
+              disabled={saveExperienceMutation.isPending}
+              error={experienceForm.formState.errors.position?.message}
+              {...experienceForm.register("position")}
+            />
+          </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <Input
@@ -2123,107 +2587,158 @@ export function StudentProfilePage(): ReactElement {
 
           <Textarea
             id="exp-description"
-            label="Mô tả công việc & Thành tích (Tùy chọn)"
-            placeholder="Nhiệm vụ chính, công nghệ áp dụng, kết quả đạt được..."
+            label="Mô tả công việc & Thành tích"
+            placeholder="Nhiệm vụ chính, kỹ năng/công cụ áp dụng và kết quả đạt được..."
             rows={3}
             maxLength={2000}
             disabled={saveExperienceMutation.isPending}
             error={experienceForm.formState.errors.description?.message}
             {...experienceForm.register("description")}
           />
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={saveExperienceMutation.isPending}
-              onClick={() => setExpModalState({ open: false, editing: null })}
-            >
-              Hủy
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              isLoading={saveExperienceMutation.isPending}
-              disabled={saveExperienceMutation.isPending}
-              className="text-white hover:text-white"
-            >
-              <Save className="h-4 w-4 text-white" />
-              <span className="text-white">{expModalState.editing ? "Cập nhật" : "Lưu kinh nghiệm"}</span>
-            </Button>
-          </div>
         </form>
       </FormDialog>
 
       {/* ===================================================================== */}
-      {/* MODAL 3: THÊM / SỬA DỰ ÁN CÁ NHÂN                                     */}
+      {/* MODAL 3: THÊM / SỬA DỰ ÁN & ĐỀ TÀI (TAG INPUT + DOMAIN SWITCHER)     */}
       {/* ===================================================================== */}
       <FormDialog
         open={projModalState.open}
+        size="lg"
         title={
           projModalState.editing
-            ? "Cập nhật dự án cá nhân"
-            : "Thêm dự án cá nhân"
+            ? "Cập nhật dự án / đề tài"
+            : "Thêm dự án / đề tài"
         }
-        description="Chia sẻ các dự án học thuật, nghiên cứu hoặc sản phẩm cá nhân nổi bật."
+        description="Đề tài nghiên cứu, đồ án môn học hoặc sản phẩm thực tế của bạn."
         onClose={() => setProjModalState({ open: false, editing: null })}
+        footer={
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[11px] text-ink-3">* Trường bắt buộc</span>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={saveProjectMutation.isPending}
+                onClick={() => setProjModalState({ open: false, editing: null })}
+              >
+                Hủy
+              </Button>
+              <Button
+                type="submit"
+                form="project-modal-form"
+                size="sm"
+                isLoading={saveProjectMutation.isPending}
+                disabled={saveProjectMutation.isPending}
+                className="text-white hover:text-white"
+              >
+                <Save className="h-4 w-4 text-white" />
+                <span className="text-white">
+                  {projModalState.editing ? "Cập nhật" : "Lưu dự án"}
+                </span>
+              </Button>
+            </div>
+          </div>
+        }
       >
         <form
+          id="project-modal-form"
           className="space-y-4"
           noValidate
           onSubmit={projectForm.handleSubmit((vals) =>
             saveProjectMutation.mutate(vals),
           )}
         >
+          {/* Thanh chuyển ngữ cảnh gợi ý 1 chạm */}
+          <div className="flex flex-wrap items-center gap-1.5 rounded-card border border-line bg-canvas px-3 py-2">
+            <span className="mr-1 text-[11px] font-medium text-ink-3">
+              Gợi ý theo lĩnh vực:
+            </span>
+            {PROJECT_DOMAIN_LIST.map((preset) => {
+              const isSelected = projectDomain === preset.key;
+              return (
+                <button
+                  key={preset.key}
+                  type="button"
+                  onClick={() => setProjectDomain(preset.key)}
+                  className={cn(
+                    "rounded-pill px-2.5 py-0.5 text-[11px] font-semibold transition-colors",
+                    isSelected
+                      ? "bg-brand-600 text-white"
+                      : "bg-surface text-ink-2 hover:bg-brand-50 hover:text-brand-700 border border-line",
+                  )}
+                >
+                  {preset.label}
+                </button>
+              );
+            })}
+          </div>
+
           <Input
             id="proj-name"
-            label="Tên dự án *"
-            placeholder="VD: Hệ thống Web CRM Tuyển dụng Sinh viên AGU"
+            label="Tên dự án / Đề tài *"
+            placeholder={activeProjectPreset.projectNamePlaceholder}
             maxLength={200}
             disabled={saveProjectMutation.isPending}
             error={projectForm.formState.errors.name?.message}
             {...projectForm.register("name")}
           />
 
-          <div className="grid gap-4 md:grid-cols-2">
+          {/* Vai trò (1 giá trị + Chip chọn nhanh) */}
+          <div>
             <Input
               id="proj-role"
-              label="Vai trò (Tùy chọn)"
-              placeholder="VD: Fullstack Developer"
+              label="Vai trò"
+              placeholder={activeProjectPreset.rolePlaceholder}
               maxLength={100}
               disabled={saveProjectMutation.isPending}
               error={projectForm.formState.errors.role?.message}
               {...projectForm.register("role")}
             />
-
-            <Input
-              id="proj-technologies"
-              label="Công nghệ sử dụng (Tùy chọn)"
-              placeholder="VD: React, NestJS, PostgreSQL"
-              maxLength={500}
-              disabled={saveProjectMutation.isPending}
-              error={projectForm.formState.errors.technologies?.message}
-              {...projectForm.register("technologies")}
-            />
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] text-ink-3">Gợi ý nhanh:</span>
+              {activeProjectPreset.roleChips.map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  disabled={saveProjectMutation.isPending}
+                  onClick={() =>
+                    projectForm.setValue("role", chip, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
+                  }
+                  className="rounded-pill border border-line bg-subtle px-2.5 py-0.5 text-[11px] text-ink-2 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 disabled:opacity-50"
+                >
+                  + {chip}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <Input
-            id="proj-url"
-            type="url"
-            label="Liên kết GitHub / Demo (Tùy chọn)"
-            placeholder="VD: https://github.com/username/project"
-            maxLength={500}
-            disabled={saveProjectMutation.isPending}
-            error={projectForm.formState.errors.projectUrl?.message}
-            {...projectForm.register("projectUrl")}
+          {/* Công cụ & Phương pháp (Nhập nhiều thẻ TagInput co giãn đa dòng) */}
+          <Controller
+            name="technologies"
+            control={projectForm.control}
+            render={({ field, fieldState }) => (
+              <TagInput
+                id="proj-technologies"
+                label="Công cụ & Phương pháp (Có thể thêm nhiều)"
+                value={field.value}
+                onChange={field.onChange}
+                placeholder={activeProjectPreset.methodPlaceholder}
+                disabled={saveProjectMutation.isPending}
+                error={fieldState.error?.message}
+                suggestions={activeProjectPreset.methodChips}
+              />
+            )}
           />
 
           <div className="grid gap-4 md:grid-cols-2">
             <Input
               id="proj-start-date"
               type="date"
-              label="Ngày bắt đầu (Tùy chọn)"
+              label="Ngày bắt đầu"
               max={todayStr}
               disabled={saveProjectMutation.isPending}
               error={projectForm.formState.errors.startDate?.message}
@@ -2233,7 +2748,7 @@ export function StudentProfilePage(): ReactElement {
             <Input
               id="proj-end-date"
               type="date"
-              label="Ngày hoàn thành (Tùy chọn)"
+              label="Ngày hoàn thành"
               max={todayStr}
               disabled={saveProjectMutation.isPending}
               error={projectForm.formState.errors.endDate?.message}
@@ -2241,38 +2756,28 @@ export function StudentProfilePage(): ReactElement {
             />
           </div>
 
+          <Input
+            id="proj-url"
+            type="url"
+            label="Liên kết minh chứng"
+            placeholder={activeProjectPreset.urlPlaceholder}
+            helperText="Link Google Drive báo cáo, Slide, bài báo khoa học, video hoặc mã nguồn."
+            maxLength={500}
+            disabled={saveProjectMutation.isPending}
+            error={projectForm.formState.errors.projectUrl?.message}
+            {...projectForm.register("projectUrl")}
+          />
+
           <Textarea
             id="proj-description"
-            label="Mô tả dự án (Tùy chọn)"
-            placeholder="Bài toán giải quyết, chức năng chính và đóng góp của bạn..."
+            label="Mô tả & Kết quả đạt được"
+            placeholder="Tóm tắt mục tiêu, phương pháp thực hiện, đóng góp cá nhân và kết quả chính..."
             rows={3}
             maxLength={2000}
             disabled={saveProjectMutation.isPending}
             error={projectForm.formState.errors.description?.message}
             {...projectForm.register("description")}
           />
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={saveProjectMutation.isPending}
-              onClick={() => setProjModalState({ open: false, editing: null })}
-            >
-              Hủy
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              isLoading={saveProjectMutation.isPending}
-              disabled={saveProjectMutation.isPending}
-              className="text-white hover:text-white"
-            >
-              <Save className="h-4 w-4 text-white" />
-              <span className="text-white">{projModalState.editing ? "Cập nhật" : "Lưu dự án"}</span>
-            </Button>
-          </div>
         </form>
       </FormDialog>
 
@@ -2283,50 +2788,49 @@ export function StudentProfilePage(): ReactElement {
         open={Boolean(confirmDelete)}
         title="Xác nhận xóa thông tin"
         onClose={() => !isDeletePending && setConfirmDelete(null)}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isDeletePending}
+              onClick={() => setConfirmDelete(null)}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              isLoading={isDeletePending}
+              disabled={isDeletePending}
+              onClick={handleExecuteDelete}
+            >
+              <Trash2 className="h-4 w-4" />
+              Xác nhận xóa
+            </Button>
+          </div>
+        }
       >
         {confirmDelete && (
-          <div className="space-y-4">
-            <div className="flex items-start gap-3 rounded-card border border-danger-border bg-danger-bg/60 p-3.5 text-xs text-danger-ink">
-              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
-              <div className="space-y-1">
-                <p className="font-semibold">
-                  Bạn có chắc chắn muốn xóa &ldquo;{confirmDelete.label}&rdquo;?
+          <div className="flex items-start gap-3 rounded-card border border-danger-border bg-danger-bg/60 p-3.5 text-xs text-danger-ink">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+            <div className="space-y-1">
+              <p className="font-semibold">
+                Bạn có chắc chắn muốn xóa &ldquo;{confirmDelete.label}&rdquo;?
+              </p>
+              {confirmDelete.type === "cv" ? (
+                <p className="text-ink-2">
+                  {confirmDelete.isDefaultCv
+                    ? "Đây là CV mặc định hiện tại. Sau khi xóa, hệ thống sẽ tự động đặt bản CV gần nhất còn lại làm mặc định. Các đơn đã ứng tuyển trước đó vẫn giữ nguyên bản sao lưu."
+                    : "Tệp CV sẽ bị xóa khỏi kho cá nhân. Các đơn đã ứng tuyển trước đó vẫn giữ nguyên bản sao lưu."}
                 </p>
-                {confirmDelete.type === "cv" ? (
-                  <p className="text-ink-2">
-                    {confirmDelete.isDefaultCv
-                      ? "Đây là CV mặc định hiện tại. Sau khi xóa, hệ thống sẽ tự động đặt bản CV gần nhất còn lại làm mặc định. Các đơn đã ứng tuyển trước đó vẫn giữ nguyên bản sao lưu."
-                      : "Tệp CV sẽ bị xóa khỏi kho cá nhân. Các đơn đã ứng tuyển trước đó vẫn giữ nguyên bản sao lưu."}
-                  </p>
-                ) : (
-                  <p className="text-ink-2">
-                    Hành động này không thể hoàn tác sau khi xác nhận.
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={isDeletePending}
-                onClick={() => setConfirmDelete(null)}
-              >
-                Hủy
-              </Button>
-              <Button
-                type="button"
-                variant="danger"
-                size="sm"
-                isLoading={isDeletePending}
-                disabled={isDeletePending}
-                onClick={handleExecuteDelete}
-              >
-                <Trash2 className="h-4 w-4" />
-                Xác nhận xóa
-              </Button>
+              ) : (
+                <p className="text-ink-2">
+                  Hành động này không thể hoàn tác sau khi xác nhận.
+                </p>
+              )}
             </div>
           </div>
         )}
