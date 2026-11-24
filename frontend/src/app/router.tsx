@@ -17,6 +17,7 @@ const UnauthorizedPage       = lazy(() => import("@/features/auth/pages/Unauthor
 const ForbiddenPage          = lazy(() => import("@/features/auth/pages/ForbiddenPage"));
 const ChangePasswordPage     = lazy(() => import("@/features/auth/pages/ChangePasswordPage"));
 const StudentJobsPage        = lazy(() => import("@/features/students/pages/StudentJobsPage"));
+const StudentProfilePage     = lazy(() => import("@/features/students/pages/StudentProfilePage"));
 const EmployerPipelinePage   = lazy(() => import("@/features/pipeline/pages/EmployerPipelinePage"));
 const CareerCenterCrmPage    = lazy(() => import("@/features/crm/pages/CareerCenterCrmPage"));
 const NotFoundPage           = lazy(() => import("@/pages/NotFoundPage"));
@@ -79,7 +80,7 @@ export function AppRouter() {
               <Route path="/student" element={<Navigate to="/student/jobs" replace />} />
               <Route path="/student/jobs"          element={<StudentJobsPage />} />
               <Route path="/student/saved-jobs"    element={<StudentJobsPage />} />
-              <Route path="/student/profile"       element={<StudentJobsPage />} />
+              <Route path="/student/profile"       element={<StudentProfilePage />} />
               <Route path="/student/applications"  element={<StudentJobsPage />} />
               <Route path="/student/interviews"    element={<StudentJobsPage />} />
               <Route path="/student/notifications" element={<StudentJobsPage />} />
