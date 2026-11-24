@@ -5,6 +5,8 @@ export { Badge, type BadgeProps } from "./Badge";
 export { Alert, type AlertProps } from "./Alert";
 export { Banner, type BannerProps } from "./Banner";
 export { ThemeToggle, type ThemeToggleProps } from "./ThemeToggle";
+export { FormDialog, type FormDialogProps } from "./FormDialog";
+export { TagInput, type TagInputProps } from "./TagInput";
 export {
   buttonVariants,
   badgeVariants,

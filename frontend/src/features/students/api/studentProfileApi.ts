@@ -1,150 +1,62 @@
-// src/features/student-profile/api/studentProfileApi.ts
 import { axiosClient } from "@/shared/api/axiosClient";
+import type {
+  ExperiencePayload,
+  ProjectPayload,
+  SkillPayload,
+  StudentCv,
+  StudentExperience,
+  StudentProfile,
+  StudentProject,
+  StudentSkill,
+  UpdateProfilePayload,
+  UploadAvatarResponse,
+} from "../types";
 
-export interface StudentProfile {
-  id: string;
-  studentCode: string;
-  fullName: string;
-  originalFullName?: string;
-  displayName: string | null;
-  avatarUrl: string | null;
-  institutionalEmail: string;
-  major: string;
-  faculty: string | null;
-  academicYear: number | null;
-  status: "ACTIVE" | "GRADUATED" | "SUSPENDED";
-  phone: string | null;
-  bio: string | null;
-  address: string | null;
-  dateOfBirth: string | null;
-  gender: "Nam" | "Nữ" | "Khác" | null;
-  gpa: number | null;
-  careerProfileVisibility: boolean;
-  skillsCount: number;
-  experiencesCount: number;
-  projectsCount: number;
-  cvsCount: number;
-  updatedAt: string;
+export type {
+  ExperiencePayload,
+  ProjectPayload,
+  SkillPayload,
+  StudentCv,
+  StudentExperience,
+  StudentProfile,
+  StudentProject,
+  StudentSkill,
+  UpdateProfilePayload,
+  UploadAvatarResponse,
+} from "../types";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object";
 }
 
-export interface StudentSkill {
-  id: string;
-  skillName: string;
-  proficiency: string | null;
-}
-
-export interface StudentExperience {
-  id: string;
-  companyName: string;
-  position: string;
-  startDate: string;
-  endDate: string | null;
-  description: string | null;
-}
-
-export interface StudentProject {
-  id: string;
-  name: string;
-  role: string | null;
-  technologies: string | null;
-  projectUrl: string | null;
-  startDate: string | null;
-  endDate: string | null;
-  description: string | null;
-}
-
-export interface StudentCv {
-  id: string;
-  title: string;
-  isDefault: boolean;
-  createdAt: string;
-  updatedAt: string;
-  file: {
-    id: string;
-    originalName: string;
-    mimeType: string;
-    sizeBytes: number;
-    createdAt: string;
-  } | null;
-}
-
-export interface UpdateProfilePayload {
-  displayName?: string | null;
-  phone?: string | null;
-  bio?: string | null;
-  address?: string | null;
-  gpa?: number | null;
-  dateOfBirth?: string | null;
-  gender?: "Nam" | "Nữ" | "Khác" | null;
-}
-
-export interface SkillPayload {
-  skillName: string;
-  proficiency?: string | null;
-}
-
-export interface ExperiencePayload {
-  companyName: string;
-  position: string;
-  startDate: string;
-  endDate?: string | null;
-  description?: string | null;
-}
-
-export interface ProjectPayload {
-  name: string;
-  role?: string | null;
-  technologies?: string | null;
-  projectUrl?: string | null;
-  startDate?: string | null;
-  endDate?: string | null;
-  description?: string | null;
-}
-
-export interface UploadAvatarResponse {
-  avatarUrl: string | null;
-  file: {
-    id: string;
-    originalName: string;
-    mimeType: string;
-    sizeBytes: number;
-    createdAt: string;
-  };
-}
-
-/**
- * Interceptor trong axiosClient.ts đã trả về response.data tại runtime.
- * Hàm helper này bóc tách an toàn field `data` từ khung chuẩn { statusCode, message, data }.
- */
 function unwrapData<T>(raw: unknown): T {
   let current: unknown = raw;
 
-  // Lớp 1: Nếu là AxiosResponse (chứa headers, config, data) -> lấy response.data
+  // AxiosResponse -> response.data
   if (
-    current !== null &&
-    typeof current === "object" &&
+    isRecord(current) &&
     "data" in current &&
     "headers" in current &&
     "config" in current
   ) {
-    current = (current as { data: unknown }).data;
+    current = current.data;
   }
 
-  // Lớp 2: Nếu là khung phản hồi chuẩn của Backend { statusCode, message, data } -> lấy envelope.data
+  // Backend envelope -> envelope.data
   if (
-    current !== null &&
-    typeof current === "object" &&
-    "data" in current &&
-    (current as { data: unknown }).data !== undefined
+    isRecord(current) &&
+    "statusCode" in current &&
+    "message" in current &&
+    "data" in current
   ) {
-    current = (current as { data: unknown }).data;
+    current = current.data;
   }
 
   return current as T;
 }
 
 export const studentProfileApi = {
-  // 1. Hồ sơ cá nhân & học thuật
+  // 1. Hồ sơ cá nhân, hiển thị công khai & ảnh đại diện
   getProfile: async (): Promise<StudentProfile> => {
     const raw: unknown = await axiosClient.get("/students/me");
     return unwrapData<StudentProfile>(raw);
@@ -152,15 +64,29 @@ export const studentProfileApi = {
 
   updateProfile: async (
     payload: UpdateProfilePayload,
-  ): Promise<StudentProfile> => {
+  ): Promise<Partial<StudentProfile>> => {
     const raw: unknown = await axiosClient.patch("/students/me", payload);
-    return unwrapData<StudentProfile>(raw);
+    return unwrapData<Partial<StudentProfile>>(raw);
   },
 
   updateVisibility: async (visibility: boolean): Promise<void> => {
     await axiosClient.patch("/students/me/visibility", {
       visibility,
     });
+  },
+
+  uploadAvatar: async (file: File): Promise<UploadAvatarResponse> => {
+    const form = new FormData();
+    form.append("file", file);
+    const raw: unknown = await axiosClient.post("/students/me/avatar", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return unwrapData<UploadAvatarResponse>(raw);
+  },
+
+  deleteAvatar: async (): Promise<{ avatarUrl: null }> => {
+    const raw: unknown = await axiosClient.delete("/students/me/avatar");
+    return unwrapData<{ avatarUrl: null }>(raw);
   },
 
   // 2. Kỹ năng chuyên môn
@@ -220,7 +146,7 @@ export const studentProfileApi = {
     await axiosClient.delete(`/students/me/experiences/${id}`);
   },
 
-  // 4. Dự án cá nhân
+  // 4. Dự án / Đề tài cá nhân
   getProjects: async (): Promise<StudentProject[]> => {
     const raw: unknown = await axiosClient.get("/students/me/projects");
     return unwrapData<StudentProject[]>(raw);
@@ -287,21 +213,10 @@ export const studentProfileApi = {
     const raw: unknown = await axiosClient.get(
       `/students/me/cvs/${id}/download-url`,
     );
-    const data = unwrapData<{ url?: string; downloadUrl?: string }>(raw);
-    return { url: data.downloadUrl ?? data.url ?? "" };
-  },
-
-  uploadAvatar: async (file: File): Promise<UploadAvatarResponse> => {
-    const form = new FormData();
-    form.append("file", file);
-    const raw: unknown = await axiosClient.post("/students/me/avatar", form, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return unwrapData<UploadAvatarResponse>(raw);
-  },
-
-  deleteAvatar: async (): Promise<{ avatarUrl: null }> => {
-    const raw: unknown = await axiosClient.delete("/students/me/avatar");
-    return unwrapData<{ avatarUrl: null }>(raw);
+    const data = unwrapData<{
+      url?: string | null;
+      downloadUrl?: string | null;
+    } | null>(raw);
+    return { url: data?.downloadUrl ?? data?.url ?? "" };
   },
 };

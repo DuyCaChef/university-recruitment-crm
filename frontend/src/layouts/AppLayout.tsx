@@ -109,14 +109,17 @@ export function AppLayout({ role = "STUDENT", userName = "Người dùng", userA
     retry: false,
   });
 
+  const studentProfile = studentProfileQuery.data;
   const effectiveUserName =
-    role === "STUDENT" && studentProfileQuery.data?.fullName
-      ? studentProfileQuery.data.fullName
+    role === "STUDENT"
+      ? studentProfile?.displayName?.trim() ||
+        studentProfile?.fullName ||
+        userName
       : userName;
 
   const effectiveUserAvatar =
     role === "STUDENT"
-      ? (studentProfileQuery.data?.avatarUrl ?? userAvatar)
+      ? (studentProfile?.avatarUrl ?? userAvatar)
       : userAvatar;
 
   const userInitial = (effectiveUserName.trim() || "U").charAt(0).toUpperCase();

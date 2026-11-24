@@ -1,6 +1,7 @@
 /**
- * Định dạng ngày giờ chuẩn theo quy ước DESIGN_SYSTEM.md Mục 12:
- * Ngày theo định dạng dd/MM/yyyy, giờ HH:mm
+ * Định dạng và chuẩn hóa ngày giờ chuẩn theo quy ước DESIGN_SYSTEM.md Mục 12:
+ * - Hiển thị ngày: dd/MM/yyyy, giờ: HH:mm, tháng/năm: MM/yyyy
+ * - Giá trị ô nhập <input type="date">: YYYY-MM-DD
  */
 
 export function formatDate(date: string | number | Date): string {
@@ -18,4 +19,28 @@ export function formatDateTime(date: string | number | Date): string {
   const hours = String(d.getHours()).padStart(2, "0");
   const minutes = String(d.getMinutes()).padStart(2, "0");
   return `${formatDate(d)} ${hours}:${minutes}`;
+}
+
+export function getTodayInputValue(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function toDateInputValue(value: string | null | undefined): string {
+  if (!value) return "";
+  return value.includes("T") ? value.split("T")[0] : value;
+}
+
+export function formatMonthYear(value: string | null): string {
+  if (!value) return "Hiện tại";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat("vi-VN", {
+      month: "2-digit",
+      year: "numeric",
+    }).format(date);
 }
