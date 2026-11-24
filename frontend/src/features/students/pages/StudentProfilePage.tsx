@@ -137,9 +137,20 @@ const experienceFormSchema = z
       .trim()
       .min(1, "Vui lòng nhập vị trí công việc.")
       .max(150, "Vị trí công việc không được vượt quá 150 ký tự."),
-    startDate: z.string().min(1, "Vui lòng chọn ngày bắt đầu."),
+    startDate: z
+      .string()
+      .min(1, "Vui lòng chọn ngày bắt đầu.")
+      .refine(
+        (val) => val <= getTodayInputValue(),
+        "Ngày bắt đầu không được ở trong tương lai.",
+      ),
     isCurrent: z.boolean(),
-    endDate: z.string(),
+    endDate: z
+      .string()
+      .refine(
+        (val) => val === "" || val <= getTodayInputValue(),
+        "Ngày kết thúc không được ở trong tương lai.",
+      ),
     description: z
       .string()
       .trim()
@@ -161,7 +172,7 @@ const projectFormSchema = z
     name: z
       .string()
       .trim()
-      .min(1, "Vui lòng nhập tên dự án.")
+      .min(1, "Vui lòng nhập tên dự án hoặc đề tài.")
       .max(200, "Tên dự án không được vượt quá 200 ký tự."),
     role: z
       .string()
@@ -170,11 +181,11 @@ const projectFormSchema = z
     technologies: z
       .string()
       .trim()
-      .max(500, "Công nghệ sử dụng không được vượt quá 500 ký tự."),
+      .max(500, "Nội dung không được vượt quá 500 ký tự."),
     projectUrl: z
       .string()
       .trim()
-      .max(500, "Đường dẫn dự án không được vượt quá 500 ký tự.")
+      .max(500, "Đường dẫn không được vượt quá 500 ký tự.")
       .refine((val) => {
         if (val === "") return true;
         try {
@@ -183,9 +194,19 @@ const projectFormSchema = z
         } catch {
           return false;
         }
-      }, "Đường dẫn dự án phải là URL hợp lệ bắt đầu bằng http:// hoặc https://"),
-    startDate: z.string(),
-    endDate: z.string(),
+      }, "Đường dẫn phải là URL hợp lệ bắt đầu bằng http:// hoặc https://"),
+    startDate: z
+      .string()
+      .refine(
+        (val) => val === "" || val <= getTodayInputValue(),
+        "Ngày bắt đầu không được ở trong tương lai.",
+      ),
+    endDate: z
+      .string()
+      .refine(
+        (val) => val === "" || val <= getTodayInputValue(),
+        "Ngày hoàn thành không được ở trong tương lai.",
+      ),
     description: z
       .string()
       .trim()
@@ -205,6 +226,14 @@ type ProjectFormValues = z.infer<typeof projectFormSchema>;
 // ============================================================================
 // 2. HÀM TIỆN ÍCH (HELPERS)
 // ============================================================================
+
+function getTodayInputValue(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 function toDateInputValue(value: string | null | undefined): string {
   if (!value) return "";
@@ -291,7 +320,8 @@ function FormDialog({
         aria-modal="true"
         aria-labelledby="profile-dialog-title"
         onClick={(event) => event.stopPropagation()}
-        className="w-full max-w-lg rounded-panel border border-line bg-surface p-5 shadow-lg md:p-6 max-h-[90vh] overflow-y-auto"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        className="w-full max-w-lg rounded-panel border border-line bg-surface p-5 shadow-lg md:p-6 max-h-[90vh] overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         <div className="flex items-start justify-between gap-3 border-b border-line pb-3">
           <div>
@@ -323,6 +353,7 @@ function FormDialog({
 // ============================================================================
 
 export function StudentProfilePage(): ReactElement {
+  const todayStr = getTodayInputValue();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -2055,6 +2086,7 @@ export function StudentProfilePage(): ReactElement {
               id="exp-start-date"
               type="date"
               label="Ngày bắt đầu *"
+              max={todayStr}
               disabled={saveExperienceMutation.isPending}
               error={experienceForm.formState.errors.startDate?.message}
               {...experienceForm.register("startDate")}
@@ -2064,6 +2096,7 @@ export function StudentProfilePage(): ReactElement {
               id="exp-end-date"
               type="date"
               label="Ngày kết thúc"
+              max={todayStr}
               disabled={saveExperienceMutation.isPending || isCurrentExp}
               error={experienceForm.formState.errors.endDate?.message}
               {...experienceForm.register("endDate")}
@@ -2191,6 +2224,7 @@ export function StudentProfilePage(): ReactElement {
               id="proj-start-date"
               type="date"
               label="Ngày bắt đầu (Tùy chọn)"
+              max={todayStr}
               disabled={saveProjectMutation.isPending}
               error={projectForm.formState.errors.startDate?.message}
               {...projectForm.register("startDate")}
@@ -2200,6 +2234,7 @@ export function StudentProfilePage(): ReactElement {
               id="proj-end-date"
               type="date"
               label="Ngày hoàn thành (Tùy chọn)"
+              max={todayStr}
               disabled={saveProjectMutation.isPending}
               error={projectForm.formState.errors.endDate?.message}
               {...projectForm.register("endDate")}

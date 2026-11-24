@@ -371,7 +371,6 @@ export class StudentService {
   // =========================================================================
   // 2. QUẢN LÝ KỸ NĂNG CHUYÊN MÔN (CRUD /api/v1/students/me/skills)
   // =========================================================================
-
   async getMySkills(actorId: string) {
     const student = await this.resolveStudentByActorId(actorId);
 
@@ -1086,11 +1085,46 @@ export class StudentService {
     return student;
   }
 
-  /** Kiểm tra tính hợp lệ của mốc thời gian (BR-STU-09: endDate >= startDate) */
+  /** Lấy chuỗi ngày hiện tại theo múi giờ Việt Nam (YYYY-MM-DD) */
+  private getTodayVietnamDateString(): string {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+  }
+
+  /**
+   * Kiểm tra tính hợp lệ của mốc thời gian:
+   * 1. Ngày bắt đầu không được ở trong tương lai
+   * 2. Ngày kết thúc (nếu có) không được ở trong tương lai
+   * 3. Ngày kết thúc không được nhỏ hơn ngày bắt đầu
+   */
   private validateDateRange(
     startDate?: Date | null,
     endDate?: Date | null,
   ): void {
+    const todayStr = this.getTodayVietnamDateString();
+
+    if (startDate) {
+      const startStr = startDate.toISOString().split('T')[0];
+      if (startStr > todayStr) {
+        throw new BadRequestException(
+          'Ngày bắt đầu không được lớn hơn ngày hiện tại.',
+        );
+      }
+    }
+
+    if (endDate) {
+      const endStr = endDate.toISOString().split('T')[0];
+      if (endStr > todayStr) {
+        throw new BadRequestException(
+          'Ngày kết thúc không được lớn hơn ngày hiện tại. Nếu chưa kết thúc, vui lòng để trống.',
+        );
+      }
+    }
+
     if (startDate && endDate && endDate.getTime() < startDate.getTime()) {
       throw new BadRequestException(
         'Ngày kết thúc không thể nhỏ hơn ngày bắt đầu.',
