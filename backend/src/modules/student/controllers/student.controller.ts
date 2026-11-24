@@ -29,6 +29,10 @@ import {
   PdfFileValidationPipe,
 } from '../../../common/pipes/pdf-file-validation.pipe';
 import { StudentService } from '../services/student.service';
+import {
+  ImageFileValidationPipe,
+  MAX_AVATAR_FILE_SIZE,
+} from '../../../common/pipes/image-file-validation.pipe';
 import { UpdateStudentProfileDto } from '../dto/update-student-profile.dto';
 import { CreateSkillDto, UpdateSkillDto } from '../dto/skill.dto';
 import {
@@ -49,7 +53,7 @@ import { UpdateVisibilityDto } from '../dto/update-visibility.dto';
 @Roles('STUDENT')
 @Controller('students')
 export class StudentController {
-  constructor(private readonly studentService: StudentService) {}
+  constructor(private readonly studentService: StudentService) { }
 
   /**
    * Trích xuất actor.id (users.id) từ Request đã qua JwtAuthGuard
@@ -104,6 +108,48 @@ export class StudentController {
       this.extractActorId(req),
       dto.visibility,
     );
+  }
+
+  //Endpoint Tải hoặc thay đổi avartar (POST / DELETE /api/v1/students/me/avatar)
+  @Post('me/avatar')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: MAX_AVATAR_FILE_SIZE },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Tải lên hoặc thay đổi ảnh đại diện sinh viên (JPG/PNG/WebP <= 2MB)',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file'],
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Tệp ảnh định dạng JPG, PNG hoặc WebP (tối đa 2MB)',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Cập nhật ảnh đại diện thành công.' })
+  @ApiResponse({ status: 400, description: 'Tệp không hợp lệ hoặc vượt quá 2MB.' })
+  async uploadAvatar(
+    @CurrentUser('id') actorId: string,
+    @UploadedFile(new ImageFileValidationPipe()) file: Express.Multer.File,
+  ) {
+    return this.studentService.uploadAvatar(actorId, file);
+  }
+
+  @Delete('me/avatar')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Gỡ ảnh đại diện sinh viên' })
+  @ApiResponse({ status: 200, description: 'Gỡ ảnh đại diện thành công.' })
+  async deleteAvatar(@CurrentUser('id') actorId: string) {
+    return this.studentService.deleteAvatar(actorId);
   }
 
   // =========================================================================

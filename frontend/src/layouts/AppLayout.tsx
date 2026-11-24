@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   Briefcase, User, FileText, Calendar, Bookmark,
   Building2, Kanban, LayoutDashboard,
@@ -11,31 +12,32 @@ import {
 import { cn } from "@/shared/lib/cn";
 import type { UserRole } from "@/shared/types/common.types";
 import { logout } from "@/features/auth/api/authApi";
+import { studentProfileApi } from "@/features/students/api/studentProfileApi";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 /* ── Icon map — gắn icon thực cho từng route ─────── */
 const ICON_MAP: Record<string, typeof Briefcase> = {
-  "/student/jobs":          Briefcase,
-  "/student/profile":       User,
-  "/student/applications":  FileText,
-  "/student/interviews":    Calendar,
-  "/student/saved-jobs":    Bookmark,
+  "/student/jobs": Briefcase,
+  "/student/profile": User,
+  "/student/applications": FileText,
+  "/student/interviews": Calendar,
+  "/student/saved-jobs": Bookmark,
   "/student/notifications": Bell,
-  "/employer/jobs":         Briefcase,
-  "/employer/pipeline":     Kanban,
-  "/employer/interviews":   Calendar,
-  "/employer/profile":      Building2,
-  "/employer/dashboard":    LayoutDashboard,
-  "/employer/notifications":Bell,
+  "/employer/jobs": Briefcase,
+  "/employer/pipeline": Kanban,
+  "/employer/interviews": Calendar,
+  "/employer/profile": Building2,
+  "/employer/dashboard": LayoutDashboard,
+  "/employer/notifications": Bell,
   "/career-center/approvals/companies": CheckCircle,
-  "/career-center/approvals/jobs":      FileCheck2,
-  "/career-center/crm":                 MessageSquareCheck,
-  "/career-center/events":              CalendarDays,
-  "/career-center/reports":             BarChart3,
-  "/career-center/dashboard":           LayoutDashboard,
-  "/admin/users":           Users,
-  "/admin/roles":           Shield,
-  "/admin/audit":           ClipboardList,
+  "/career-center/approvals/jobs": FileCheck2,
+  "/career-center/crm": MessageSquareCheck,
+  "/career-center/events": CalendarDays,
+  "/career-center/reports": BarChart3,
+  "/career-center/dashboard": LayoutDashboard,
+  "/admin/users": Users,
+  "/admin/roles": Shield,
+  "/admin/audit": ClipboardList,
 };
 
 interface NavItem {
@@ -46,33 +48,33 @@ interface NavItem {
 
 const NAV_ITEMS: Record<UserRole, NavItem[]> = {
   STUDENT: [
-    { label: "Việc làm",        to: "/student/jobs",          primary: true },
-    { label: "Hồ sơ",           to: "/student/profile",       primary: true },
-    { label: "Đơn của tôi",     to: "/student/applications",  primary: true },
-    { label: "Lịch phỏng vấn",  to: "/student/interviews",    primary: true },
+    { label: "Việc làm", to: "/student/jobs", primary: true },
+    { label: "Hồ sơ", to: "/student/profile", primary: true },
+    { label: "Đơn của tôi", to: "/student/applications", primary: true },
+    { label: "Lịch phỏng vấn", to: "/student/interviews", primary: true },
     { label: "Việc làm đã lưu", to: "/student/saved-jobs" },
-    { label: "Thông báo",       to: "/student/notifications" },
+    { label: "Thông báo", to: "/student/notifications" },
   ],
   EMPLOYER: [
-    { label: "Tin tuyển dụng",  to: "/employer/jobs",          primary: true },
-    { label: "Phễu ứng viên",   to: "/employer/pipeline",      primary: true },
-    { label: "Lịch phỏng vấn",  to: "/employer/interviews",    primary: true },
-    { label: "Hồ sơ công ty",   to: "/employer/profile",       primary: true },
+    { label: "Tin tuyển dụng", to: "/employer/jobs", primary: true },
+    { label: "Phễu ứng viên", to: "/employer/pipeline", primary: true },
+    { label: "Lịch phỏng vấn", to: "/employer/interviews", primary: true },
+    { label: "Hồ sơ công ty", to: "/employer/profile", primary: true },
     { label: "Bảng điều khiển", to: "/employer/dashboard" },
-    { label: "Thông báo",       to: "/employer/notifications" },
+    { label: "Thông báo", to: "/employer/notifications" },
   ],
   CAREER_CENTER: [
-    { label: "Thẩm định",             to: "/career-center/approvals/companies", primary: true },
-    { label: "Duyệt tin",             to: "/career-center/approvals/jobs",      primary: true },
-    { label: "Quan hệ đối tác (CRM)", to: "/career-center/crm",                primary: true },
-    { label: "Sự kiện",               to: "/career-center/events",              primary: true },
-    { label: "Báo cáo",               to: "/career-center/reports" },
-    { label: "Bảng điều khiển",       to: "/career-center/dashboard" },
+    { label: "Thẩm định", to: "/career-center/approvals/companies", primary: true },
+    { label: "Duyệt tin", to: "/career-center/approvals/jobs", primary: true },
+    { label: "Quan hệ đối tác (CRM)", to: "/career-center/crm", primary: true },
+    { label: "Sự kiện", to: "/career-center/events", primary: true },
+    { label: "Báo cáo", to: "/career-center/reports" },
+    { label: "Bảng điều khiển", to: "/career-center/dashboard" },
   ],
   SYSTEM_ADMIN: [
-    { label: "Người dùng",        to: "/admin/users",  primary: true },
-    { label: "Phân quyền",        to: "/admin/roles",  primary: true },
-    { label: "Nhật ký kiểm toán", to: "/admin/audit",  primary: true },
+    { label: "Người dùng", to: "/admin/users", primary: true },
+    { label: "Phân quyền", to: "/admin/roles", primary: true },
+    { label: "Nhật ký kiểm toán", to: "/admin/audit", primary: true },
   ],
 };
 
@@ -83,10 +85,10 @@ interface AppLayoutProps {
 }
 
 const ROLE_LABEL: Record<UserRole, string> = {
-  STUDENT:       "Sinh viên",
-  EMPLOYER:      "Doanh nghiệp",
+  STUDENT: "Sinh viên",
+  EMPLOYER: "Doanh nghiệp",
   CAREER_CENTER: "Cán bộ",
-  SYSTEM_ADMIN:  "Quản trị viên",
+  SYSTEM_ADMIN: "Quản trị viên",
 };
 
 export function AppLayout({ role = "STUDENT", userName = "Người dùng", userAvatar }: AppLayoutProps) {
@@ -98,6 +100,26 @@ export function AppLayout({ role = "STUDENT", userName = "Người dùng", userA
   const navItems = NAV_ITEMS[role];
   const primaryItems = navItems.filter((item) => item.primary);
   const secondaryItems = navItems.filter((item) => !item.primary);
+
+  const studentProfileQuery = useQuery({
+    queryKey: ["student-profile"],
+    queryFn: studentProfileApi.getProfile,
+    enabled: role === "STUDENT",
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const effectiveUserName =
+    role === "STUDENT" && studentProfileQuery.data?.fullName
+      ? studentProfileQuery.data.fullName
+      : userName;
+
+  const effectiveUserAvatar =
+    role === "STUDENT"
+      ? (studentProfileQuery.data?.avatarUrl ?? userAvatar)
+      : userAvatar;
+
+  const userInitial = (effectiveUserName.trim() || "U").charAt(0).toUpperCase();
 
   const handleLogout = async (): Promise<void> => {
     try {
@@ -187,19 +209,19 @@ export function AppLayout({ role = "STUDENT", userName = "Người dùng", userA
         <div className={cn("border-t border-line p-3", sidebarCollapsed ? "flex justify-center" : "space-y-2")}>
           {!sidebarCollapsed && (
             <div className="flex items-center gap-2 px-2 py-1">
-              {userAvatar ? (
+              {effectiveUserAvatar ? (
                 <img
-                  src={userAvatar}
-                  alt={userName}
+                  src={effectiveUserAvatar}
+                  alt={effectiveUserName}
                   className="h-8 w-8 rounded-pill object-cover shrink-0"
                 />
               ) : (
                 <div className="flex h-8 w-8 items-center justify-center rounded-pill bg-brand-100 text-sm font-bold text-brand-700 shrink-0">
-                  {userName.charAt(0).toUpperCase()}
+                  {userInitial}
                 </div>
               )}
               <div className="min-w-0">
-                <p className="truncate text-xs font-semibold text-ink">{userName}</p>
+                <p className="truncate text-xs font-semibold text-ink">{effectiveUserName}</p>
                 <p className="text-xs text-ink-3">{ROLE_LABEL[role]}</p>
               </div>
             </div>
@@ -245,7 +267,12 @@ export function AppLayout({ role = "STUDENT", userName = "Người dùng", userA
         </nav>
         <div className="border-t border-line p-2 flex flex-col items-center gap-2">
           <ThemeToggle variant="ghost" size="sm" />
-          <button type="button" onClick={() => void handleLogout()} title="Đăng xuất" className="rounded-button p-2 text-ink-2 hover:bg-danger-bg hover:text-danger-ink transition-colors">
+          <button
+            type="button"
+            onClick={() => void handleLogout()}
+            title="Đăng xuất"
+            className="rounded-button p-2 text-ink-2 hover:bg-danger-bg hover:text-danger-ink transition-colors"
+          >
             <LogOut className="h-4 w-4" />
           </button>
         </div>
@@ -292,7 +319,12 @@ export function AppLayout({ role = "STUDENT", userName = "Người dùng", userA
         </nav>
         <div className="border-t border-line p-4 flex items-center justify-between">
           <ThemeToggle variant="ghost" size="sm" />
-          <button type="button" onClick={() => void handleLogout()} title="Đăng xuất" className="rounded-button p-2 text-ink-2 hover:bg-danger-bg hover:text-danger-ink">
+          <button
+            type="button"
+            onClick={() => void handleLogout()}
+            title="Đăng xuất"
+            className="rounded-button p-2 text-ink-2 hover:bg-danger-bg hover:text-danger-ink"
+          >
             <LogOut className="h-4 w-4" />
           </button>
         </div>
@@ -331,15 +363,15 @@ export function AppLayout({ role = "STUDENT", userName = "Người dùng", userA
               <span className="absolute right-2 top-2 h-2 w-2 rounded-pill bg-danger-ink ring-2 ring-surface" />
             </button>
             <div className="h-6 w-px bg-line" aria-hidden="true" />
-            {userAvatar ? (
+            {effectiveUserAvatar ? (
               <img
-                src={userAvatar}
-                alt={userName}
+                src={effectiveUserAvatar}
+                alt={effectiveUserName}
                 className="h-8 w-8 rounded-pill object-cover shrink-0"
               />
             ) : (
               <div className="flex h-8 w-8 items-center justify-center rounded-pill bg-brand-100 text-sm font-bold text-brand-700">
-                {userName.charAt(0).toUpperCase()}
+                {userInitial}
               </div>
             )}
           </div>

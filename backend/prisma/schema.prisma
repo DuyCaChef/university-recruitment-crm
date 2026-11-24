@@ -164,6 +164,8 @@ model Student {
   studentMasterId String @unique(map: "uq_students_master") @map("student_master_id") @db.Uuid
   userId          String @unique(map: "uq_students_user") @map("user_id") @db.Uuid
 
+  displayName             String?   @map("display_name") @db.VarChar(150)
+  avatarFileId            String?   @unique(map: "uq_students_avatar_file") @map("avatar_file_id") @db.Uuid
   phone                   String?   @db.VarChar(30)
   bio                     String?
   address                 String?
@@ -178,6 +180,7 @@ model Student {
   // Ràng buộc toàn vẹn: Không cho phép xóa gốc
   studentMaster StudentMaster @relation(fields: [studentMasterId], references: [id], onDelete: Restrict)
   user          User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  avatarFile    File?         @relation("StudentAvatarFile", fields: [avatarFileId], references: [id], onDelete: SetNull)
 
   // Quan hệ 1-N (Kỹ năng, Kinh nghiệm, Dự án, CV)
   skills      StudentSkill[]
@@ -261,8 +264,9 @@ model File {
   sizeBytes    BigInt   @map("size_bytes")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  owner      User?       @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
-  studentCvs StudentCv[]
+  owner         User?       @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
+  studentCvs    StudentCv[]
+  studentAvatar Student?    @relation("StudentAvatarFile")
 
   @@map("files")
 }

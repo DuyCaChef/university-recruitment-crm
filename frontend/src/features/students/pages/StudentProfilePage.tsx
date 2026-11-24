@@ -17,6 +17,7 @@ import {
   BadgeCheck,
   BriefcaseBusiness,
   CalendarDays,
+  Camera,
   Check,
   Download,
   ExternalLink,
@@ -54,6 +55,9 @@ type CapabilityTab = "skills" | "experiences" | "projects";
 const VN_PHONE_REGEX = /^(?:(?:03|05|07|08|09)\d{8}|02\d{9})$/;
 const MAX_CV_BYTES = 5 * 1024 * 1024; // 5 MB
 
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2 MB
+const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 const PROFICIENCY_OPTIONS = [
   "Cơ bản",
   "Khá",
@@ -62,6 +66,14 @@ const PROFICIENCY_OPTIONS = [
 ] as const;
 
 const personalProfileSchema = z.object({
+  displayName: z
+    .string()
+    .trim()
+    .max(150, "Tên hiển thị không được vượt quá 150 ký tự.")
+    .refine(
+      (val) => val === "" || val.length >= 2,
+      "Tên hiển thị phải có ít nhất 2 ký tự (hoặc để trống để dùng tên gốc AGU).",
+    ),
   phone: z
     .string()
     .trim()
@@ -335,9 +347,9 @@ export function StudentProfilePage(): ReactElement {
     editing: StudentProject | null;
   }>({ open: false, editing: null });
 
-  // Trạng thái Hộp thoại xác nhận Xóa
+  // Trạng thái Hộp thoại xác nhận Xóa (mở rộng type thêm "avatar")
   const [confirmDelete, setConfirmDelete] = useState<{
-    type: "skill" | "experience" | "project" | "cv";
+    type: "skill" | "experience" | "project" | "cv" | "avatar";
     id: string;
     label: string;
     isDefaultCv?: boolean;
@@ -374,12 +386,53 @@ export function StudentProfilePage(): ReactElement {
   });
 
   // ── Form 1: Thông tin cá nhân (React Hook Form + Zod) ──────────────────────
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadAvatarMutation = useMutation({
+    mutationFn: studentProfileApi.uploadAvatar,
+    onSuccess: async () => {
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = "";
+      }
+      setErrorNotice(null);
+      setNotice("Đã cập nhật ảnh đại diện mới.");
+      await queryClient.invalidateQueries({ queryKey: ["student-profile"] });
+    },
+    onError: (err) => {
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = "";
+      }
+      setNotice(null);
+      setErrorNotice(
+        extractApiErrorMessage(err, "Không thể tải lên ảnh đại diện."),
+      );
+    },
+  });
+
+  const deleteAvatarMutation = useMutation({
+    mutationFn: studentProfileApi.deleteAvatar,
+    onSuccess: async () => {
+      setConfirmDelete(null);
+      setErrorNotice(null);
+      setNotice("Đã gỡ ảnh đại diện.");
+      await queryClient.invalidateQueries({ queryKey: ["student-profile"] });
+    },
+    onError: (err) => {
+      setConfirmDelete(null);
+      setNotice(null);
+      setErrorNotice(
+        extractApiErrorMessage(err, "Không thể gỡ ảnh đại diện."),
+      );
+    },
+  });
+
   const profile = profileQuery.data;
 
   const personalForm = useForm<PersonalProfileFormValues>({
     resolver: zodResolver(personalProfileSchema),
     mode: "onBlur",
     values: {
+      displayName: profile?.displayName ?? "",
       phone: profile?.phone ?? "",
       dateOfBirth: toDateInputValue(profile?.dateOfBirth),
       gender: profile?.gender ?? "",
@@ -748,11 +801,17 @@ export function StudentProfilePage(): ReactElement {
   const onSubmitPersonalProfile = (
     values: PersonalProfileFormValues,
   ): void => {
+    const cleanDisplayName = values.displayName.trim();
     const cleanPhone = values.phone.replace(/[\s.-]/g, "");
     const cleanAddress = values.address.trim();
     const cleanBio = values.bio.trim();
 
     profileMutation.mutate({
+      displayName: cleanDisplayName
+        ? cleanDisplayName
+        : profile.displayName !== null
+          ? null
+          : undefined,
       phone: cleanPhone ? cleanPhone : profile.phone !== null ? null : undefined,
       dateOfBirth: values.dateOfBirth
         ? values.dateOfBirth
@@ -776,6 +835,28 @@ export function StudentProfilePage(): ReactElement {
           : undefined,
       bio: cleanBio ? cleanBio : profile.bio !== null ? null : undefined,
     });
+  };
+
+  const handleAvatarFileChange = (
+    event: ChangeEvent<HTMLInputElement>,
+  ): void => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+      setErrorNotice("Chỉ chấp nhận ảnh đại diện định dạng JPG, PNG hoặc WebP.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_AVATAR_BYTES) {
+      setErrorNotice("Dung lượng ảnh đại diện không được vượt quá 2 MB.");
+      event.target.value = "";
+      return;
+    }
+
+    setErrorNotice(null);
+    uploadAvatarMutation.mutate(file);
   };
 
   const openCreateSkillModal = (): void => {
@@ -909,6 +990,8 @@ export function StudentProfilePage(): ReactElement {
       deleteProjectMutation.mutate(confirmDelete.id);
     } else if (confirmDelete.type === "cv") {
       cvDeleteMutation.mutate(confirmDelete.id);
+    } else if (confirmDelete.type === "avatar") {
+      deleteAvatarMutation.mutate();
     }
   };
 
@@ -930,7 +1013,8 @@ export function StudentProfilePage(): ReactElement {
     deleteSkillMutation.isPending ||
     deleteExperienceMutation.isPending ||
     deleteProjectMutation.isPending ||
-    cvDeleteMutation.isPending;
+    cvDeleteMutation.isPending ||
+    deleteAvatarMutation.isPending;
 
   return (
     <div className="space-y-6">
@@ -987,22 +1071,93 @@ export function StudentProfilePage(): ReactElement {
         {/* Thông tin học thuật từ student_masters */}
         <div className="rounded-panel border border-line bg-surface p-5 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-pill bg-brand-100 text-h3 font-bold text-brand-700">
-              {(profile.fullName || "SV").trim().charAt(0).toUpperCase()}
+            {/* Khối Ảnh đại diện có thể thay đổi */}
+            <div className="flex flex-col items-start md:items-center gap-2 shrink-0">
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={isSuspended || uploadAvatarMutation.isPending}
+                onChange={handleAvatarFileChange}
+                className="sr-only"
+              />
+              <button
+                type="button"
+                disabled={isSuspended || uploadAvatarMutation.isPending}
+                onClick={() => avatarInputRef.current?.click()}
+                title="Nhấn để thay đổi ảnh đại diện (JPG, PNG, WebP tối đa 2MB)"
+                aria-label="Thay đổi ảnh đại diện"
+                className="group relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-pill border-2 border-brand-200 bg-brand-100 text-h3 font-bold text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {profile.avatarUrl ? (
+                  <img
+                    src={profile.avatarUrl}
+                    alt={profile.fullName || "Ảnh đại diện sinh viên"}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span>
+                    {(profile.fullName || "SV").trim().charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <span className="absolute inset-0 flex items-center justify-center bg-ink/45 text-white opacity-0 transition-opacity group-hover:opacity-100">
+                  <Camera className="h-5 w-5" aria-hidden="true" />
+                </span>
+              </button>
+
+              <div className="flex items-center gap-2 text-[11px]">
+                <button
+                  type="button"
+                  disabled={isSuspended || uploadAvatarMutation.isPending}
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="font-semibold text-brand-600 hover:underline disabled:opacity-50"
+                >
+                  {uploadAvatarMutation.isPending ? "Đang tải..." : "Đổi ảnh"}
+                </button>
+                {profile.avatarUrl && (
+                  <>
+                    <span className="text-line-strong">·</span>
+                    <button
+                      type="button"
+                      disabled={isSuspended || deleteAvatarMutation.isPending}
+                      onClick={() =>
+                        setConfirmDelete({
+                          type: "avatar",
+                          id: "avatar",
+                          label: "ảnh đại diện hiện tại",
+                        })
+                      }
+                      className="font-semibold text-danger-ink hover:underline disabled:opacity-50"
+                    >
+                      Gỡ ảnh
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
+
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-h3 text-ink">
                   {profile.fullName || "Sinh viên AGU"}
                 </h2>
                 <span
-                  title="Dữ liệu học thuật do Nhà trường quản lý, không thể tự chỉnh sửa"
+                  title="Thông tin Khoa, Ngành, Khóa và MSSV do Nhà trường quản lý"
                   className="inline-flex items-center gap-1 rounded-pill bg-subtle px-2 py-0.5 text-[11px] font-medium text-ink-3"
                 >
                   <LockKeyhole className="h-3 w-3" aria-hidden="true" />
                   Dữ liệu gốc AGU
                 </span>
               </div>
+
+              {profile.originalFullName &&
+                profile.displayName &&
+                profile.displayName !== profile.originalFullName && (
+                  <p className="mt-0.5 text-xs text-ink-3">
+                    Tên theo hồ sơ gốc AGU: {profile.originalFullName}
+                  </p>
+                )}
+
               <p className="mt-1 font-mono text-small font-semibold text-brand-600">
                 {profile.studentCode}
               </p>
@@ -1114,6 +1269,19 @@ export function StudentProfilePage(): ReactElement {
           noValidate
           onSubmit={personalForm.handleSubmit(onSubmitPersonalProfile)}
         >
+          <div className="md:col-span-2">
+            <Input
+              id="student-display-name"
+              label="Tên hiển thị trên hồ sơ (Tùy chọn)"
+              placeholder={profile.originalFullName || profile.fullName}
+              maxLength={150}
+              disabled={isSuspended || profileMutation.isPending}
+              error={personalForm.formState.errors.displayName?.message}
+              helperText={`Để trống để hiển thị theo họ tên gốc từ AGU (${profile.originalFullName || profile.fullName}). Dữ liệu gốc từ Nhà trường không bị thay đổi.`}
+              {...personalForm.register("displayName")}
+            />
+          </div>
+
           <Input
             id="student-phone"
             type="tel"

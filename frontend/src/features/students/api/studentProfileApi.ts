@@ -5,6 +5,9 @@ export interface StudentProfile {
   id: string;
   studentCode: string;
   fullName: string;
+  originalFullName?: string;
+  displayName: string | null;
+  avatarUrl: string | null;
   institutionalEmail: string;
   major: string;
   faculty: string | null;
@@ -66,6 +69,7 @@ export interface StudentCv {
 }
 
 export interface UpdateProfilePayload {
+  displayName?: string | null;
   phone?: string | null;
   bio?: string | null;
   address?: string | null;
@@ -95,6 +99,17 @@ export interface ProjectPayload {
   startDate?: string | null;
   endDate?: string | null;
   description?: string | null;
+}
+
+export interface UploadAvatarResponse {
+  avatarUrl: string | null;
+  file: {
+    id: string;
+    originalName: string;
+    mimeType: string;
+    sizeBytes: number;
+    createdAt: string;
+  };
 }
 
 /**
@@ -274,5 +289,19 @@ export const studentProfileApi = {
     );
     const data = unwrapData<{ url?: string; downloadUrl?: string }>(raw);
     return { url: data.downloadUrl ?? data.url ?? "" };
+  },
+
+  uploadAvatar: async (file: File): Promise<UploadAvatarResponse> => {
+    const form = new FormData();
+    form.append("file", file);
+    const raw: unknown = await axiosClient.post("/students/me/avatar", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return unwrapData<UploadAvatarResponse>(raw);
+  },
+
+  deleteAvatar: async (): Promise<{ avatarUrl: null }> => {
+    const raw: unknown = await axiosClient.delete("/students/me/avatar");
+    return unwrapData<{ avatarUrl: null }>(raw);
   },
 };
