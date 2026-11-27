@@ -63,6 +63,22 @@
   }
 }
 
+.agu-signature-hero {
+  color: #fff;
+  background:
+    radial-gradient(
+      ellipse at 88% 0%,
+      var(--c-signature-hero-glow),
+      transparent 34%
+    ),
+    linear-gradient(
+      125deg,
+      var(--c-signature-hero-from),
+      var(--c-signature-hero-mid) 52%,
+      var(--c-signature-hero-to)
+    );
+}
+
 /* ── Tiện ích ẩn thanh cuộn nhưng vẫn cho phép cuộn nội dung ── */
 .no-scrollbar::-webkit-scrollbar {
   display: none !important;

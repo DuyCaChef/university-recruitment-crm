@@ -11,18 +11,19 @@ import { Badge, buttonVariants } from "@/components/ui";
 import { cn } from "@/shared/lib/cn";
 import { formatMonthYear } from "@/shared/lib/formatDate";
 import type { PublicCareerProfile } from "../types";
+import { getNameInitials } from "../utils/profileUtils";
 
 const MAX_VISIBLE_SKILLS = 4;
+const SKILL_TONES = [
+  "border-brand-200 bg-brand-50 text-brand-700",
+  "border-sage-100 bg-sage-100 text-sage-ink",
+  "border-mist-100 bg-mist-100 text-mist-ink",
+  "border-mauve-100 bg-mauve-100 text-mauve-ink",
+  "border-sand-100 bg-sand-100 text-sand-ink",
+] as const;
 
 export interface CareerProfileCardProps {
   profile: PublicCareerProfile;
-}
-
-function getNameInitials(fullName: string): string {
-  const parts = fullName.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "SV";
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-  return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
 }
 
 export function CareerProfileCard({
@@ -41,11 +42,15 @@ export function CareerProfileCard({
   const latestProject = profile.projects[0] ?? null;
 
   return (
-    <article className="group flex flex-col justify-between gap-4 rounded-card border border-line bg-surface p-5 shadow-sm transition-all duration-150 hover:border-brand-300 hover:shadow-md">
+    <article className="group relative flex flex-col justify-between gap-4 overflow-hidden rounded-card border border-line bg-surface p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md">
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-500 via-sage to-sand"
+      />
       <div className="space-y-4">
         {/* Header: Avatar + Identity */}
         <div className="flex items-start gap-3.5">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-pill border border-brand-200 bg-brand-100 text-base font-bold text-brand-700">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-pill border-2 border-surface bg-brand-100 text-base font-bold text-brand-700 shadow-sm ring-1 ring-brand-200">
             {profile.avatarUrl && !avatarFailed ? (
               <img
                 src={profile.avatarUrl}
@@ -107,14 +112,19 @@ export function CareerProfileCard({
           </p>
           {profile.skills.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
-              {visibleSkills.map((skill) => (
+              {visibleSkills.map((skill, index) => (
                 <span
                   key={`${skill.skillName}-${skill.proficiency ?? ""}`}
-                  className="inline-flex items-center gap-1 rounded-pill border border-line bg-subtle px-2.5 py-0.5 text-xs font-medium text-ink"
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-pill border px-2.5 py-1 text-xs font-semibold",
+                    SKILL_TONES[index % SKILL_TONES.length],
+                  )}
                 >
                   <span>{skill.skillName}</span>
                   {skill.proficiency && (
-                    <span className="text-ink-3">· {skill.proficiency}</span>
+                    <span className="font-medium opacity-75">
+                      · {skill.proficiency}
+                    </span>
                   )}
                 </span>
               ))}
@@ -133,7 +143,7 @@ export function CareerProfileCard({
         </div>
 
         {/* Experience & Projects summary */}
-        <div className="space-y-2 rounded-input border border-line/80 bg-subtle/60 p-3 text-xs">
+        <div className="space-y-2 rounded-input border border-brand-100 bg-gradient-to-br from-brand-50/80 to-surface p-3 text-xs">
           <div className="flex items-start gap-2">
             <Briefcase
               className={cn(

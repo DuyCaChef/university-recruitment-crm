@@ -1,5 +1,5 @@
 import { type FormEvent, type ReactElement } from "react";
-import { Loader2, RotateCcw, Search, X } from "lucide-react";
+import { Loader2, RotateCcw, Search, Tags, X } from "lucide-react";
 import { Button, Input } from "@/components/ui";
 import { cn } from "@/shared/lib/cn";
 
@@ -53,8 +53,21 @@ export function CareerProfileFilterBar({
   return (
     <section
       aria-label="Tìm kiếm và lọc hồ sơ ứng viên"
-      className="rounded-panel border border-line bg-surface p-4 shadow-sm md:p-5"
+      className="rounded-panel border border-brand-100 bg-surface p-4 shadow-md md:p-6"
     >
+      <div className="mb-4 flex items-center gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-input bg-brand-50 text-brand-700">
+          <Search className="h-5 w-5" aria-hidden="true" />
+        </div>
+        <div>
+          <h2 className="text-base font-bold text-ink">
+            Tìm kiếm theo tiêu chí
+          </h2>
+          <p className="mt-0.5 text-xs text-ink-2">
+            Kết hợp ngành đào tạo và kỹ năng để tìm hồ sơ phù hợp
+          </p>
+        </div>
+      </div>
       <form
         onSubmit={handleFormSubmit}
         className="grid gap-3 md:grid-cols-2 desktop:grid-cols-[1fr_1fr_auto] desktop:items-end"
@@ -116,8 +129,11 @@ export function CareerProfileFilterBar({
       </form>
 
       {/* Quick Filter Suggestion Chips */}
-      <div className="mt-3 flex flex-wrap items-center gap-2 pt-1">
-        <span className="text-xs font-semibold text-ink-3">Gợi ý nhanh:</span>
+      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line/70 pt-4">
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-2">
+          <Tags className="h-3.5 w-3.5 text-sand-ink" aria-hidden="true" />
+          Gợi ý nhanh:
+        </span>
 
         {QUICK_MAJOR_SUGGESTIONS.map((major) => {
           const isSelected =
@@ -130,7 +146,7 @@ export function CareerProfileFilterBar({
                 isSelected ? onRemoveMajor() : onQuickSelectMajor(major)
               }
               className={cn(
-                "rounded-pill border px-2.5 py-1 text-xs font-medium transition-colors",
+                "min-h-9 rounded-pill border px-3 py-1.5 text-xs font-medium transition-colors",
                 isSelected
                   ? "border-brand-600 bg-brand-600 text-white"
                   : "border-line bg-subtle text-ink-2 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700",
@@ -156,7 +172,7 @@ export function CareerProfileFilterBar({
                 isSelected ? onRemoveSkill() : onQuickSelectSkill(skill)
               }
               className={cn(
-                "rounded-pill border px-2.5 py-1 text-xs font-medium transition-colors",
+                "min-h-9 rounded-pill border px-3 py-1.5 text-xs font-medium transition-colors",
                 isSelected
                   ? "border-info-border bg-info-bg font-semibold text-info-ink"
                   : "border-line bg-surface text-ink-2 hover:border-info-border hover:bg-info-bg hover:text-info-ink",

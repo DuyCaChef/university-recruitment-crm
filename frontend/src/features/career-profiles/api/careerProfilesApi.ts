@@ -2,6 +2,7 @@ import { axiosClient } from "@/shared/api/axiosClient";
 import type {
   CareerProfileListResponse,
   CareerProfileSearchParams,
+  PublicCareerProfile,
 } from "../types";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -55,5 +56,14 @@ export const careerProfilesApi = {
       params: normalized,
     });
     return unwrapData<CareerProfileListResponse>(raw);
+  },
+
+  getPublicCareerProfile: async (
+    studentId: string,
+  ): Promise<PublicCareerProfile> => {
+    const raw: unknown = await axiosClient.get(
+      `/career-profiles/${encodeURIComponent(studentId)}`,
+    );
+    return unwrapData<PublicCareerProfile>(raw);
   },
 };

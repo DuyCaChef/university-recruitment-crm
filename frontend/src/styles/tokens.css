@@ -20,6 +20,12 @@
   --c-brand-900: #0f3340;
   --c-brand-text: #1d4e5f;
 
+  /* ── AGU Career signature hero (stable across themes) ── */
+  --c-signature-hero-from: #10303c;
+  --c-signature-hero-mid: #163c4a;
+  --c-signature-hero-to: #1d4e5f;
+  --c-signature-hero-glow: rgba(214, 169, 100, 0.2);
+
   /* ── Clay (đất nung) ──────────────────────── */
   --c-clay-600: #a65a3e;
   --c-clay-100: #f2e0d6;
