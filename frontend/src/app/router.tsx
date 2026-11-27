@@ -20,6 +20,7 @@ const StudentJobsPage        = lazy(() => import("@/features/students/pages/Stud
 const StudentProfilePage     = lazy(() => import("@/features/students/pages/StudentProfilePage"));
 const EmployerPipelinePage   = lazy(() => import("@/features/pipeline/pages/EmployerPipelinePage"));
 const CareerCenterCrmPage    = lazy(() => import("@/features/crm/pages/CareerCenterCrmPage"));
+const CareerProfilesPage     = lazy(() => import("@/features/career-profiles/pages/CareerProfilesPage"));
 const NotFoundPage           = lazy(() => import("@/pages/NotFoundPage"));
 
 /* ── Page loading fallback ──────────────────────── */
@@ -92,6 +93,7 @@ export function AppRouter() {
               <Route path="/employer/dashboard"     element={<EmployerPipelinePage />} />
               <Route path="/employer/jobs"          element={<EmployerPipelinePage />} />
               <Route path="/employer/pipeline"      element={<EmployerPipelinePage />} />
+              <Route path="/employer/candidates"    element={<CareerProfilesPage />} />
               <Route path="/employer/interviews"    element={<EmployerPipelinePage />} />
               <Route path="/employer/profile"       element={<EmployerPipelinePage />} />
               <Route path="/employer/notifications" element={<EmployerPipelinePage />} />
@@ -104,6 +106,7 @@ export function AppRouter() {
               <Route path="/career-center/approvals/companies" element={<CareerCenterCrmPage />} />
               <Route path="/career-center/approvals/jobs"      element={<CareerCenterCrmPage />} />
               <Route path="/career-center/crm/*"               element={<CareerCenterCrmPage />} />
+              <Route path="/career-center/students"            element={<CareerProfilesPage />} />
               <Route path="/career-center/events"              element={<CareerCenterCrmPage />} />
               <Route path="/career-center/reports"             element={<CareerCenterCrmPage />} />
             </Route>

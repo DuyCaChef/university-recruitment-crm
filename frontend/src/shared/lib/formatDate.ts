@@ -37,10 +37,8 @@ export function toDateInputValue(value: string | null | undefined): string {
 export function formatMonthYear(value: string | null): string {
   if (!value) return "Hiện tại";
   const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? value
-    : new Intl.DateTimeFormat("vi-VN", {
-      month: "2-digit",
-      year: "numeric",
-    }).format(date);
+  if (Number.isNaN(date.getTime())) return value;
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${month}/${year}`;
 }
