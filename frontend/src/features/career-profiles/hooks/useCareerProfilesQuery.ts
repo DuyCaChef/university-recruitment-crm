@@ -5,6 +5,7 @@ import {
 } from "../api/careerProfilesApi";
 import type { CareerProfileSearchParams } from "../types";
 
+// hook lấy danh sách hồ sơ nghề nghiệp của sinh viên dựa trên các tham số tìm kiếm
 export function useCareerProfilesQuery(params?: CareerProfileSearchParams) {
   const normalizedParams = normalizeCareerProfileSearchParams(params);
 

@@ -1,17 +1,19 @@
 import {
   ChevronLeft,
   ChevronRight,
-  GraduationCap,
   LogOut,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 import type { NavItem } from "@/shared/constants/navigation";
 import { cn } from "@/shared/lib/cn";
-import { NavItemLink } from "./NavItemLink";
+import { NavItemList } from "./NavItemList";
 
 interface AppSidebarProps {
   navItems: NavItem[];
   roleLabel: string;
+  brandTitle: string;
+  brandSubtitle: string;
   userName: string;
   userAvatar?: string;
   userInitial: string;
@@ -23,6 +25,8 @@ interface AppSidebarProps {
 export function AppSidebar({
   navItems,
   roleLabel,
+  brandTitle,
+  brandSubtitle,
   userName,
   userAvatar,
   userInitial,
@@ -40,35 +44,34 @@ export function AppSidebar({
       >
         <div
           className={cn(
-            "relative flex h-[76px] shrink-0 items-center border-b border-line/80",
-            collapsed ? "justify-center px-3" : "gap-3 px-5",
+            "flex h-16 shrink-0 items-center border-b border-line",
+            collapsed ? "justify-center px-3" : "px-5",
           )}
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-input bg-gradient-to-br from-brand-700 to-brand-500 text-white shadow-md transition-transform duration-300 hover:scale-105 motion-reduce:transition-none">
-            <GraduationCap className="h-5 w-5" aria-hidden="true" />
-          </div>
-          {!collapsed && (
-            <div className="min-w-0">
-              <span className="block text-sm font-bold leading-tight tracking-wide text-ink">
-                AGU CAREER
-              </span>
-              <span className="mt-1 inline-flex items-center gap-1.5 rounded-pill bg-brand-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-700">
-                <span className="h-1.5 w-1.5 rounded-pill bg-brand-500" aria-hidden="true" />
-                {roleLabel}
-              </span>
-            </div>
+          {collapsed ? (
+            <BrandLogo
+              size="md"
+              subtitle={brandSubtitle}
+              title={brandTitle}
+              variant="mark"
+            />
+          ) : (
+            <BrandLogo
+              size="md"
+              subtitle={brandSubtitle}
+              title={brandTitle}
+              variant="horizontal"
+            />
           )}
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5" aria-label="Điều hướng chính">
-          {!collapsed && (
+          {!collapsed && !navItems.some((item) => item.section) && (
             <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-3">
               Không gian làm việc
             </p>
           )}
-          {navItems.map((item) => (
-            <NavItemLink key={item.to} item={item} showLabel={!collapsed} />
-          ))}
+          <NavItemList navItems={navItems} showLabel={!collapsed} />
         </nav>
 
         <div className={cn("border-t border-line/80 p-3", collapsed ? "flex justify-center" : "space-y-3")}>
@@ -113,22 +116,24 @@ export function AppSidebar({
           type="button"
           onClick={onToggleCollapsed}
           aria-label={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
-          className="absolute -right-3 top-[82px] flex h-7 w-7 items-center justify-center rounded-pill border border-line bg-surface text-ink-2 shadow-md transition-all duration-200 hover:scale-110 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus motion-reduce:transition-none"
+          title={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+          className="absolute -right-3 top-12 flex h-7 w-7 items-center justify-center rounded-pill border border-line bg-surface text-ink-2 shadow-md transition-all duration-200 hover:scale-110 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus motion-reduce:transition-none"
         >
           {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
         </button>
       </aside>
 
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[72px] flex-col border-r border-line bg-gradient-to-b from-surface to-brand-50/40 shadow-sm md:flex desktop:hidden">
-        <div className="flex h-[76px] shrink-0 items-center justify-center border-b border-line/80">
-          <div className="flex h-10 w-10 items-center justify-center rounded-input bg-gradient-to-br from-brand-700 to-brand-500 text-white shadow-md">
-            <GraduationCap className="h-5 w-5" aria-hidden="true" />
-          </div>
+        <div className="flex h-16 shrink-0 items-center justify-center border-b border-line">
+          <BrandLogo
+            size="md"
+            subtitle={brandSubtitle}
+            title={brandTitle}
+            variant="mark"
+          />
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto p-2 py-5" aria-label="Điều hướng chính">
-          {navItems.map((item) => (
-            <NavItemLink key={item.to} item={item} showLabel={false} />
-          ))}
+          <NavItemList navItems={navItems} showLabel={false} />
         </nav>
         <div className="flex flex-col items-center gap-2 border-t border-line/80 p-2">
           <ThemeToggle variant="ghost" size="sm" className="transition-colors hover:bg-brand-50 hover:text-brand-700" />

@@ -25,6 +25,7 @@ export interface NavItem {
   label: string;
   to: string;
   icon: LucideIcon;
+  section?: string;
   /** Nếu true, hiển thị trong bottom-nav mobile (tối đa 4 mục) */
   primary?: boolean;
 }
@@ -40,13 +41,46 @@ export const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: "Thông báo", to: "/student/notifications", icon: Bell },
   ],
   EMPLOYER: [
-    { label: "Tin tuyển dụng", to: "/employer/jobs", icon: Briefcase, primary: true },
-    { label: "Phễu ứng viên", to: "/employer/pipeline", icon: Kanban, primary: true },
-    { label: "Ứng viên", to: "/employer/candidates", icon: UserSearch },
-    { label: "Lịch phỏng vấn", to: "/employer/interviews", icon: Calendar, primary: true },
-    { label: "Hồ sơ công ty", to: "/employer/profile", icon: Building2, primary: true },
-    { label: "Bảng điều khiển", to: "/employer/dashboard", icon: LayoutDashboard },
-    { label: "Thông báo", to: "/employer/notifications", icon: Bell },
+    {
+      label: "Bảng điều khiển",
+      to: "/employer/dashboard",
+      icon: LayoutDashboard,
+      section: "Tổng quan",
+      primary: true,
+    },
+    {
+      label: "Tin tuyển dụng",
+      to: "/employer/jobs",
+      icon: Briefcase,
+      section: "Tuyển dụng",
+      primary: true,
+    },
+    {
+      label: "Phễu ứng viên",
+      to: "/employer/pipeline",
+      icon: Kanban,
+      section: "Tuyển dụng",
+      primary: true,
+    },
+    {
+      label: "Lịch phỏng vấn",
+      to: "/employer/interviews",
+      icon: Calendar,
+      section: "Tuyển dụng",
+      primary: true,
+    },
+    {
+      label: "Tìm kiếm ứng viên",
+      to: "/employer/candidates",
+      icon: UserSearch,
+      section: "Tuyển dụng",
+    },
+    {
+      label: "Hồ sơ công ty",
+      to: "/employer/profile",
+      icon: Building2,
+      section: "Tổ chức",
+    },
   ],
   CAREER_CENTER: [
     { label: "Thẩm định", to: "/career-center/approvals/companies", icon: CheckCircle, primary: true },

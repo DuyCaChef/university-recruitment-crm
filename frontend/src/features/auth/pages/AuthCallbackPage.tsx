@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useEffect, type ReactElement } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 import { getCurrentUser } from "../api/authApi";
 import type { ApiErrorPayload } from "../types";
 
@@ -34,10 +34,7 @@ const getErrorRedirect = (errorCode: string): string => {
     return "/unauthorized";
   }
 
-  if (
-    errorCode === "STUDENT_SUSPENDED" ||
-    errorCode === "STUDENT_SUPPEND"
-  ) {
+  if (errorCode === "STUDENT_SUSPENDED" || errorCode === "STUDENT_SUPPEND") {
     return "/forbidden";
   }
 
@@ -49,16 +46,20 @@ export default function AuthCallbackPage(): ReactElement {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Cho phép xem trước giao diện loading khi mở /auth/callback?preview=1
+    if (searchParams.get("preview") === "1") {
+      return;
+    }
+
     const token = searchParams.get("token");
     const callbackErrorCode = searchParams.get("error");
     let isActive = true;
 
     const completeAuthentication = async (): Promise<void> => {
       if (!token) {
-        navigate(
-          getErrorRedirect(callbackErrorCode ?? "UNAUTHORIZED"),
-          { replace: true },
-        );
+        navigate(getErrorRedirect(callbackErrorCode ?? "UNAUTHORIZED"), {
+          replace: true,
+        });
         return;
       }
 
@@ -94,23 +95,18 @@ export default function AuthCallbackPage(): ReactElement {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-canvas px-4 py-8">
       <main
-        className="w-full max-w-md rounded-panel border border-line bg-surface p-6 text-center shadow-lg md:p-8"
+        className="w-full max-w-md p-6 text-center md:p-8"
         aria-live="polite"
       >
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-pill bg-brand-50 text-brand-600">
-          <ShieldCheck className="h-7 w-7" aria-hidden="true" />
-        </div>
-        <h1 className="mt-5 text-xl font-bold text-ink">
-          Đang xác thực tài khoản AGU
+        <BrandLogo variant="mark" size="xl" animated className="scale-150" />
+
+        <h1 className="mt-4 text-xl font-bold text-brand-text">
+          Đang xác thực tài khoản <span className="text-sand-ink">AGU</span>
         </h1>
         <p className="mt-2 text-sm leading-5 text-ink-2">
           Đang nạp thông tin người dùng và chuẩn bị không gian làm việc của bạn.
         </p>
-        <Loader2
-          className="mx-auto mt-6 h-5 w-5 animate-spin text-brand-600"
-          aria-label="Đang xác thực"
-        />
-        <p className="mt-3 text-xs text-ink-3">
+        <p className="mt-4 text-xs text-ink-3">
           Vui lòng không đóng cửa sổ này
         </p>
       </main>

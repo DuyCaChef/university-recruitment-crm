@@ -154,3 +154,108 @@
     scroll-behavior: auto !important;
   }
 }
+
+@keyframes agu-logo-pillar-rise {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  45% {
+    transform: translate3d(0, -4px, 0);
+    opacity: 0.85;
+  }
+}
+
+@keyframes agu-logo-dot-bounce {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -5px, 0) scale(1.08);
+  }
+}
+
+@keyframes agu-logo-mark-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -4px, 0) scale(1.035);
+  }
+}
+
+@keyframes agu-logo-bridge-wave {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scaleX(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate3d(0, -2px, 0) scaleX(1.06);
+    opacity: 1;
+  }
+}
+
+@keyframes agu-logo-wing-lift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0);
+  }
+  50% {
+    transform: translate3d(0, -3px, 0) rotate(-2deg);
+  }
+}
+
+.animate-agu-logo-float {
+  animation: agu-logo-mark-float 3s ease-in-out infinite;
+}
+
+.animate-agu-pillar-1 {
+  animation: agu-logo-pillar-rise 2.2s cubic-bezier(0.2, 0.7, 0.2, 1) infinite;
+}
+
+.animate-agu-pillar-2 {
+  animation: agu-logo-pillar-rise 2.2s cubic-bezier(0.2, 0.7, 0.2, 1) infinite;
+  animation-delay: 0.2s;
+}
+
+.animate-agu-pillar-3 {
+  animation: agu-logo-pillar-rise 2.2s cubic-bezier(0.2, 0.7, 0.2, 1) infinite;
+  animation-delay: 0.4s;
+}
+
+.animate-agu-dot-bounce {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: agu-logo-dot-bounce 2.2s cubic-bezier(0.2, 0.7, 0.2, 1) infinite;
+  animation-delay: 0.55s;
+}
+
+.animate-agu-bridge-wave {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: agu-logo-bridge-wave 2.8s ease-in-out infinite;
+  animation-delay: 0.35s;
+}
+
+.animate-agu-wing-lift {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: agu-logo-wing-lift 2.6s ease-in-out infinite;
+  animation-delay: 0.75s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-agu-pillar-1,
+  .animate-agu-pillar-2,
+  .animate-agu-pillar-3,
+  .animate-agu-dot-bounce,
+  .animate-agu-logo-float,
+  .animate-agu-bridge-wave,
+  .animate-agu-wing-lift {
+    animation: none;
+  }
+}

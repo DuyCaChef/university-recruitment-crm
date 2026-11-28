@@ -1,15 +1,17 @@
-import { GraduationCap, LogOut, MoreHorizontal, X } from "lucide-react";
+import { LogOut, MoreHorizontal, X } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 import type { NavItem } from "@/shared/constants/navigation";
 import { cn } from "@/shared/lib/cn";
-import { NavItemLink } from "./NavItemLink";
+import { NavItemList } from "./NavItemList";
 
 interface MobileNavigationProps {
   navItems: NavItem[];
   primaryItems: NavItem[];
   secondaryItems: NavItem[];
-  roleLabel: string;
+  brandTitle: string;
+  brandSubtitle: string;
   drawerOpen: boolean;
   onDrawerOpenChange: (open: boolean) => void;
   onLogout: () => void;
@@ -19,7 +21,8 @@ export function MobileNavigation({
   navItems,
   primaryItems,
   secondaryItems,
-  roleLabel,
+  brandTitle,
+  brandSubtitle,
   drawerOpen,
   onDrawerOpenChange,
   onLogout,
@@ -39,16 +42,13 @@ export function MobileNavigation({
           drawerOpen ? "flex translate-x-0" : "-translate-x-full",
         )}
       >
-        <div className="flex h-[76px] items-center justify-between border-b border-line/80 px-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-input bg-gradient-to-br from-brand-700 to-brand-500 text-white shadow-md">
-              <GraduationCap className="h-5 w-5" aria-hidden="true" />
-            </div>
-            <div>
-              <span className="block text-sm font-bold tracking-wide text-ink">AGU CAREER</span>
-              <span className="mt-0.5 block text-xs font-medium text-brand-600">{roleLabel}</span>
-            </div>
-          </div>
+        <div className="flex h-16 items-center justify-between border-b border-line px-5">
+          <BrandLogo
+            size="md"
+            subtitle={brandSubtitle}
+            title={brandTitle}
+            variant="horizontal"
+          />
           <button
             type="button"
             onClick={() => onDrawerOpenChange(false)}
@@ -59,17 +59,16 @@ export function MobileNavigation({
           </button>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto p-3 py-5" aria-label="Điều hướng chính">
-          <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-3">
-            Không gian làm việc
-          </p>
-          {navItems.map((item) => (
-            <NavItemLink
-              key={item.to}
-              item={item}
-              showLabel
-              onClick={() => onDrawerOpenChange(false)}
-            />
-          ))}
+          {!navItems.some((item) => item.section) && (
+            <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-3">
+              Không gian làm việc
+            </p>
+          )}
+          <NavItemList
+            navItems={navItems}
+            showLabel
+            onItemClick={() => onDrawerOpenChange(false)}
+          />
         </nav>
         <div className="flex items-center justify-between border-t border-line/80 p-4">
           <ThemeToggle variant="ghost" size="sm" className="transition-colors hover:bg-brand-50 hover:text-brand-700" />

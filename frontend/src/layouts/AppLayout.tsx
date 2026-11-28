@@ -29,6 +29,9 @@ export function AppLayout({
   const navItems = NAV_ITEMS[role];
   const primaryItems = navItems.filter((item) => item.primary);
   const secondaryItems = navItems.filter((item) => !item.primary);
+  const brandTitle = role === "EMPLOYER" ? "AGU PARTNER" : "AGU CAREER";
+  const brandSubtitle =
+    role === "EMPLOYER" ? "Cổng Doanh nghiệp" : ROLE_LABEL[role];
 
   const studentProfileQuery = useQuery({
     queryKey: ["student-profile"],
@@ -69,6 +72,8 @@ export function AppLayout({
       <AppSidebar
         navItems={navItems}
         roleLabel={ROLE_LABEL[role]}
+        brandTitle={brandTitle}
+        brandSubtitle={brandSubtitle}
         userName={effectiveUserName}
         userAvatar={effectiveUserAvatar}
         userInitial={userInitial}
@@ -81,7 +86,8 @@ export function AppLayout({
         navItems={navItems}
         primaryItems={primaryItems}
         secondaryItems={secondaryItems}
-        roleLabel={ROLE_LABEL[role]}
+        brandTitle={brandTitle}
+        brandSubtitle={brandSubtitle}
         drawerOpen={drawerOpen}
         onDrawerOpenChange={setDrawerOpen}
         onLogout={handleLogout}
